@@ -1,0 +1,16 @@
+[
+  {
+    "id": "1",
+    "name": "Client Demo",
+    "url": "https://example.com",
+    "domain": "example.com",
+    "tags": ["vitrine"]
+  },
+  {
+    "id": "2",
+    "name": "Boutique E-commerce",
+    "url": "https://httpbin.org",
+    "domain": "httpbin.org",
+    "tags": ["e-commerce", "critique"]
+  }
+]
