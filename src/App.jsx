@@ -9,6 +9,7 @@ import { checkSiteViaEdge } from "./lib/checkSiteEdge";
 import { checkDnsViaEdge } from "./lib/checkDnsEdge";
 import { checkPerfViaEdge } from "./lib/checkPerfEdge";
 import PerformancePanel from "./components/PerformancePanel";
+import ObsolescencePanel from "./components/ObsolescencePanel";
 import "./App.css";
 
 export default function App() {
@@ -197,6 +198,12 @@ export default function App() {
               Performance
             </button>
             <button
+              className={`nav-btn ${view === "obsolescence" ? "active" : ""}`}
+              onClick={() => setView("obsolescence")}
+            >
+              Obsolescence
+            </button>
+            <button
               className={`nav-btn ${view === "report" ? "active" : ""}`}
               onClick={() => setView("report")}
             >
@@ -241,6 +248,7 @@ export default function App() {
             onCheckAllPerf={checkAllPerf}
           />
         )}
+        {view === "obsolescence" && <ObsolescencePanel />}
         {view === "report" && (
           <ReportView clients={clients} results={results} />
         )}
