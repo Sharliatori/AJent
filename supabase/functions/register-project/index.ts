@@ -24,6 +24,7 @@ Deno.serve(async (req: Request) => {
     const body = await req.json();
     const projectName = body.project_name?.trim();
     const projectUrl = body.project_url?.trim() || null;
+    const webhookUrl = body.webhook_url?.trim() || null;
 
     if (!projectName) {
       return new Response(
@@ -44,6 +45,7 @@ Deno.serve(async (req: Request) => {
       .insert({
         project_name: projectName,
         project_url: projectUrl,
+        webhook_url: webhookUrl,
         api_key: apiKey,
       })
       .select("id, project_name, api_key")

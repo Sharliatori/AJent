@@ -54,9 +54,19 @@ export const analyzedProjectsService = {
     return data;
   },
 
-  async register(projectName, projectUrl) {
+  async register(projectName, projectUrl, webhookUrl) {
     return callEdgeFunction("register-project", {
-      body: { project_name: projectName, project_url: projectUrl || null },
+      body: {
+        project_name: projectName,
+        project_url: projectUrl || null,
+        webhook_url: webhookUrl || null,
+      },
+    });
+  },
+
+  async triggerAnalysis(projectId) {
+    return callEdgeFunction("trigger-analysis", {
+      body: { project_id: projectId },
     });
   },
 

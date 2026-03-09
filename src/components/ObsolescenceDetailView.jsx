@@ -11,6 +11,8 @@ import {
   Trash2,
   Clock,
   Loader2,
+  Play,
+  RefreshCw,
 } from "lucide-react";
 import {
   analyzedProjectsService,
@@ -60,6 +62,8 @@ export default function ObsolescenceDetailView({ projectId, onBack }) {
   const [copied, setCopied] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [triggering, setTriggering] = useState(false);
+  const [triggerResult, setTriggerResult] = useState(null);
 
   useEffect(() => {
     loadData();
@@ -118,6 +122,25 @@ export default function ObsolescenceDetailView({ projectId, onBack }) {
     }
   }
 
+  async function handleTriggerAnalysis() {
+    setTriggering(true);
+    setTriggerResult(null);
+    try {
+      const result = await analyzedProjectsService.triggerAnalysis(projectId);
+      setTriggerResult({ success: true, message: "Analyse declenchee" });
+      setTimeout(() => {
+        setTriggerResult(null);
+        loadData();
+      }, 5000);
+    } catch (err) {
+      const msg = err.message || "Erreur lors du declenchement";
+      setTriggerResult({ success: false, message: msg });
+      setTimeout(() => setTriggerResult(null), 5000);
+    } finally {
+      setTriggering(false);
+    }
+  }
+
   if (loading) {
     return (
       <div className="obs-panel">
@@ -170,6 +193,20 @@ export default function ObsolescenceDetailView({ projectId, onBack }) {
             </div>
           </div>
           <div className="obs-detail-actions">
+            {project.webhook_url && (
+              <button
+                className="btn btn-primary"
+                onClick={handleTriggerAnalysis}
+                disabled={triggering}
+              >
+                {triggering ? (
+                  <Loader2 size={14} className="spinner-icon" />
+                ) : (
+                  <Play size={14} />
+                )}
+                {triggering ? "Envoi..." : "Lancer une analyse"}
+              </button>
+            )}
             <button className="btn btn-secondary" onClick={handleCopyApiKey}>
               {copied ? <Check size={14} /> : <Copy size={14} />}
               {copied ? "Copie" : "Cle API"}
@@ -184,6 +221,34 @@ export default function ObsolescenceDetailView({ projectId, onBack }) {
           </div>
         </div>
       </div>
+
+      {triggerResult && (
+        <div
+          className="card obs-trigger-feedback"
+          style={{
+            borderLeft: `3px solid ${triggerResult.success ? "var(--ok)" : "var(--danger)"}`,
+            padding: "10px 16px",
+            marginBottom: 12,
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+          }}
+        >
+          {triggerResult.success ? (
+            <RefreshCw size={14} style={{ color: "var(--ok)" }} />
+          ) : (
+            <AlertTriangle size={14} style={{ color: "var(--danger)" }} />
+          )}
+          <span style={{ color: triggerResult.success ? "var(--ok)" : "var(--danger)" }}>
+            {triggerResult.message}
+          </span>
+          {triggerResult.success && (
+            <span style={{ color: "var(--text3)", fontSize: 12, marginLeft: "auto" }}>
+              Les resultats apparaitront dans quelques instants...
+            </span>
+          )}
+        </div>
+      )}
 
       {showDeleteConfirm && (
         <div className="card obs-delete-confirm">
@@ -230,6 +295,7 @@ export default function ObsolescenceDetailView({ projectId, onBack }) {
             <IntegrationSnippet
               apiKey={project.api_key}
               projectName={project.project_name}
+              webhookUrl={project.webhook_url}
             />
           </div>
         )}

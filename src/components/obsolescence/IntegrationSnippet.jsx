@@ -1,9 +1,9 @@
 import React, { useState } from "react";
-import { Copy, Check, Terminal } from "lucide-react";
+import { Copy, Check, Terminal, Play } from "lucide-react";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 
-export default function IntegrationSnippet({ apiKey, projectName }) {
+export default function IntegrationSnippet({ apiKey, projectName, webhookUrl }) {
   const [copiedField, setCopiedField] = useState(null);
   const [copiedAll, setCopiedAll] = useState(false);
 
@@ -81,6 +81,36 @@ export default function IntegrationSnippet({ apiKey, projectName }) {
         Le module embarque dans votre application utilisera ces variables pour
         envoyer automatiquement ses rapports d'analyse a AJent.
       </div>
+
+      {webhookUrl && (
+        <div className="obs-snippet-webhook-section">
+          <div className="obs-snippet-header" style={{ marginTop: 16 }}>
+            <Play size={16} />
+            <span>Analyse manuelle</span>
+          </div>
+          <div className="obs-snippet-hint">
+            Un webhook est configure sur <code>{webhookUrl}</code>. Le dashboard
+            peut envoyer un POST a cette URL pour declencher une analyse a la demande.
+            Le payload envoye contient :
+          </div>
+          <div className="obs-snippet-vars">
+            <code className="obs-snippet-value" style={{ whiteSpace: "pre", display: "block", padding: "10px 12px", lineHeight: 1.6 }}>
+{`{
+  "action": "trigger_analysis",
+  "project_id": "...",
+  "project_name": "${projectName}",
+  "api_key": "...",
+  "callback_url": "${apiUrl}"
+}`}
+            </code>
+          </div>
+          <div className="obs-snippet-hint" style={{ marginTop: 8 }}>
+            Votre endpoint webhook doit lancer l'analyse puis envoyer le rapport
+            au <code>callback_url</code> avec la cle API dans le header
+            <code> Authorization: Bearer {"{api_key}"}</code>.
+          </div>
+        </div>
+      )}
     </div>
   );
 }

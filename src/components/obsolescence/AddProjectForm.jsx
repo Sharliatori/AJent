@@ -6,6 +6,7 @@ import IntegrationSnippet from "./IntegrationSnippet";
 export default function AddProjectForm({ onClose, onProjectCreated }) {
   const [name, setName] = useState("");
   const [url, setUrl] = useState("");
+  const [webhookUrl, setWebhookUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [result, setResult] = useState(null);
@@ -18,7 +19,7 @@ export default function AddProjectForm({ onClose, onProjectCreated }) {
     setError("");
 
     try {
-      const data = await analyzedProjectsService.register(name.trim(), url.trim());
+      const data = await analyzedProjectsService.register(name.trim(), url.trim(), webhookUrl.trim());
       setResult(data);
       if (onProjectCreated) onProjectCreated(data);
     } catch (err) {
@@ -74,7 +75,7 @@ export default function AddProjectForm({ onClose, onProjectCreated }) {
       </div>
 
       <div className="field">
-        <label className="label">URL (optionnel)</label>
+        <label className="label">URL du projet (optionnel)</label>
         <input
           className="input"
           type="url"
@@ -82,6 +83,20 @@ export default function AddProjectForm({ onClose, onProjectCreated }) {
           onChange={(e) => setUrl(e.target.value)}
           placeholder="https://mon-app.netlify.app"
         />
+      </div>
+
+      <div className="field">
+        <label className="label">URL Webhook d'analyse (optionnel)</label>
+        <input
+          className="input"
+          type="url"
+          value={webhookUrl}
+          onChange={(e) => setWebhookUrl(e.target.value)}
+          placeholder="https://mon-app.netlify.app/.netlify/functions/analyze-trigger"
+        />
+        <span className="obs-field-hint">
+          Permet de lancer une analyse a distance depuis le dashboard
+        </span>
       </div>
 
       <div className="obs-add-form-actions">
