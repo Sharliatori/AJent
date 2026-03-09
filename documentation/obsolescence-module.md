@@ -1,6 +1,6 @@
 # Module Obsolescence AJent -- Documentation
 
-**Version : 2026-03-001**
+**Version : 2026-03-002**
 
 ## Vue d'ensemble
 
@@ -34,8 +34,10 @@ Registre de tous les projets surveilles.
 | project_url        | text         | URL de production                              |
 | api_key            | text         | Cle unique pour l'authentification des envois  |
 | framework          | text         | Framework detecte (next, vite, etc.)           |
+| webhook_url        | text         | URL du webhook pour declenchement a distance   |
 | last_health_score  | integer      | Cache du dernier score                         |
 | last_analysis_at   | timestamptz  | Date de la derniere analyse                    |
+| last_trigger_at    | timestamptz  | Date du dernier declenchement manuel           |
 | is_active          | boolean      | Actif ou soft-deleted                          |
 | created_at         | timestamptz  | Date de creation                               |
 | updated_at         | timestamptz  | Date de derniere modification                  |
@@ -174,6 +176,32 @@ Consulter les rapports d'un projet.
 }
 ```
 
+### POST /functions/v1/trigger-analysis
+Declencher une analyse a distance via le webhook configure pour un projet.
+
+**Body :**
+```json
+{
+  "project_id": "uuid"
+}
+```
+
+**Comportement :**
+1. Verifie que le projet existe et est actif
+2. Verifie qu'un webhook_url est configure
+3. Applique un cooldown de 60 secondes entre deux declenchements
+4. Envoie un POST au webhook de l'application avec :
+   - Header `Authorization: Bearer {api_key}`
+   - Body contenant `action`, `project_id`, `project_name`, `api_key`, `callback_url`
+5. Timeout de 15 secondes sur l'appel webhook
+
+**Reponses :**
+- `200` : `{ "status": "triggered", "webhook_status": 200, "project_name": "..." }`
+- `404` : Projet introuvable
+- `422` : Aucun webhook configure
+- `429` : Cooldown actif (attendre N secondes)
+- `502` : Webhook injoignable, timeout, ou erreur HTTP
+
 ### DELETE /functions/v1/delete-project
 Desactiver un projet (soft delete).
 
@@ -207,14 +235,16 @@ Desactiver un projet (soft delete).
 | ScoreHistory           | src/components/obsolescence/ScoreHistory.jsx         | Graphique en barres SVG de l'historique        |
 | EmptyState             | src/components/obsolescence/EmptyState.jsx           | Etat vide avec icone et CTA                    |
 | AddProjectForm         | src/components/obsolescence/AddProjectForm.jsx       | Formulaire d'ajout de projet                   |
+| IntegrationSnippet     | src/components/obsolescence/IntegrationSnippet.jsx   | Bloc env vars + instructions webhook           |
+| WebhookUrlEditor       | src/components/obsolescence/WebhookUrlEditor.jsx     | Editeur inline du webhook URL                  |
 
 ## Flux d'onboarding d'un nouveau projet
 
 1. L'utilisateur ouvre l'onglet "Obsolescence" dans AJent
 2. Il clique sur "Ajouter un projet"
-3. Il entre le nom et l'URL du projet
+3. Il entre le nom, l'URL du projet, et optionnellement l'URL webhook
 4. Le systeme genere une api_key unique (prefixee ak_)
-5. L'utilisateur copie l'api_key
+5. L'utilisateur copie l'api_key et les variables d'environnement affichees
 6. Dans son application, il configure les variables d'environnement :
    - `ANALYZER_API_KEY` = la cle copiee
    - `ANALYZER_API_URL` = URL Supabase + `/functions/v1/receive-analysis`
@@ -222,6 +252,7 @@ Desactiver un projet (soft delete).
 7. Il deploie le module embarque (BLOC A)
 8. Les analyses automatiques envoient les rapports
 9. Les rapports apparaissent dans le dashboard
+10. (Optionnel) L'URL webhook peut etre ajoutee/modifiee a tout moment dans l'onglet Integration
 
 ## Securite
 

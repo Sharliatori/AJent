@@ -25,6 +25,7 @@ import DependencyTable from "./obsolescence/DependencyTable";
 import VulnerabilityTable from "./obsolescence/VulnerabilityTable";
 import ScoreHistory from "./obsolescence/ScoreHistory";
 import IntegrationSnippet from "./obsolescence/IntegrationSnippet";
+import WebhookUrlEditor from "./obsolescence/WebhookUrlEditor";
 
 const TABS = [
   { key: "overview", label: "Vue d'ensemble" },
@@ -297,6 +298,12 @@ export default function ObsolescenceDetailView({ projectId, onBack }) {
               projectName={project.project_name}
               webhookUrl={project.webhook_url}
             />
+            <div style={{ marginTop: 16 }}>
+              <WebhookUrlEditor
+                project={project}
+                onUpdated={(updated) => setProject(updated)}
+              />
+            </div>
           </div>
         )}
       </div>

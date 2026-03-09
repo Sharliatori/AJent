@@ -1066,6 +1066,53 @@ body {
   border-top: 1px solid var(--border);
 }
 
+.obs-webhook-editor {
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  border-radius: 10px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.obs-webhook-editor-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.obs-webhook-editor-display {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.obs-webhook-none {
+  flex: 1;
+  font-size: 13px;
+  color: var(--text3);
+  font-style: italic;
+}
+
+.obs-webhook-editor-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.obs-webhook-editor-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
 .obs-trigger-feedback {
   animation: fadeInSlide 0.3s ease;
 }

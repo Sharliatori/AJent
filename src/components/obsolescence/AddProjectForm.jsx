@@ -42,6 +42,7 @@ export default function AddProjectForm({ onClose, onProjectCreated }) {
         <IntegrationSnippet
           apiKey={result.api_key}
           projectName={result.project_name}
+          webhookUrl={webhookUrl.trim() || null}
         />
 
         <button className="btn btn-primary" onClick={onClose} style={{ marginTop: 4 }}>
@@ -92,7 +93,7 @@ export default function AddProjectForm({ onClose, onProjectCreated }) {
           type="url"
           value={webhookUrl}
           onChange={(e) => setWebhookUrl(e.target.value)}
-          placeholder="https://mon-app.netlify.app/.netlify/functions/analyze-trigger"
+          placeholder="https://mon-app.netlify.app/.netlify/functions/trigger-analysis"
         />
         <span className="obs-field-hint">
           Permet de lancer une analyse a distance depuis le dashboard

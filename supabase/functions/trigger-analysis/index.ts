@@ -73,22 +73,58 @@ Deno.serve(async (req: Request) => {
       }
     }
 
-    const webhookResponse = await fetch(project.webhook_url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        action: "trigger_analysis",
-        project_id: project.id,
-        project_name: project.project_name,
-        api_key: project.api_key,
-        callback_url: `${Deno.env.get("SUPABASE_URL")}/functions/v1/receive-analysis`,
-      }),
-    });
+    let webhookResponse: Response;
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 15_000);
+
+      webhookResponse = await fetch(project.webhook_url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${project.api_key}`,
+        },
+        body: JSON.stringify({
+          action: "trigger_analysis",
+          project_id: project.id,
+          project_name: project.project_name,
+          api_key: project.api_key,
+          callback_url: `${Deno.env.get("SUPABASE_URL")}/functions/v1/receive-analysis`,
+        }),
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeout);
+    } catch (fetchErr: any) {
+      const isTimeout = fetchErr.name === "AbortError";
+      const message = isTimeout
+        ? "Webhook timed out after 15 seconds"
+        : `Webhook unreachable: ${fetchErr.message}`;
+
+      console.error("Webhook call failed:", message);
+
+      return new Response(
+        JSON.stringify({ error: message }),
+        { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     await supabase
       .from("analyzed_projects")
       .update({ last_trigger_at: new Date().toISOString() })
       .eq("id", projectId);
+
+    if (!webhookResponse.ok) {
+      return new Response(
+        JSON.stringify({
+          status: "webhook_error",
+          webhook_status: webhookResponse.status,
+          project_name: project.project_name,
+          error: `Webhook returned HTTP ${webhookResponse.status}`,
+        }),
+        { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     return new Response(
       JSON.stringify({
