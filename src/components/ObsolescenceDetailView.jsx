@@ -22,12 +22,14 @@ import HealthScoreGauge from "./obsolescence/HealthScoreGauge";
 import DependencyTable from "./obsolescence/DependencyTable";
 import VulnerabilityTable from "./obsolescence/VulnerabilityTable";
 import ScoreHistory from "./obsolescence/ScoreHistory";
+import IntegrationSnippet from "./obsolescence/IntegrationSnippet";
 
 const TABS = [
   { key: "overview", label: "Vue d'ensemble" },
   { key: "deps", label: "Dependances" },
   { key: "vulns", label: "Vulnerabilites" },
   { key: "history", label: "Historique" },
+  { key: "integration", label: "Integration" },
 ];
 
 function timeAgo(dateStr) {
@@ -223,6 +225,14 @@ export default function ObsolescenceDetailView({ projectId, onBack }) {
         {tab === "deps" && <DependencyTable dependencies={dependencies} />}
         {tab === "vulns" && <VulnerabilityTable vulnerabilities={vulnerabilities} />}
         {tab === "history" && <HistoryTab reports={allReports} />}
+        {tab === "integration" && (
+          <div className="obs-integration-tab">
+            <IntegrationSnippet
+              apiKey={project.api_key}
+              projectName={project.project_name}
+            />
+          </div>
+        )}
       </div>
     </div>
   );

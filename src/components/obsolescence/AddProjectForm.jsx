@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Plus, Copy, Check, X, Loader2 } from "lucide-react";
 import { analyzedProjectsService } from "../../lib/obsolescenceService";
+import IntegrationSnippet from "./IntegrationSnippet";
 
 export default function AddProjectForm({ onClose, onProjectCreated }) {
   const [name, setName] = useState("");
@@ -8,7 +9,6 @@ export default function AddProjectForm({ onClose, onProjectCreated }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [result, setResult] = useState(null);
-  const [copied, setCopied] = useState(false);
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -28,17 +28,6 @@ export default function AddProjectForm({ onClose, onProjectCreated }) {
     }
   }
 
-  async function handleCopy() {
-    if (!result?.api_key) return;
-    try {
-      await navigator.clipboard.writeText(result.api_key);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      setCopied(false);
-    }
-  }
-
   if (result) {
     return (
       <div className="card obs-add-form">
@@ -48,21 +37,13 @@ export default function AddProjectForm({ onClose, onProjectCreated }) {
             <X size={16} />
           </button>
         </div>
-        <div className="obs-api-key-block">
-          <label className="label">Cle API du projet</label>
-          <div className="obs-api-key-row">
-            <code className="obs-api-key-value">{result.api_key}</code>
-            <button className="btn btn-secondary" onClick={handleCopy}>
-              {copied ? <Check size={14} /> : <Copy size={14} />}
-              {copied ? "Copie" : "Copier"}
-            </button>
-          </div>
-          <p className="obs-api-key-hint">
-            Conservez cette cle. Ajoutez-la dans les variables d'environnement de votre
-            application sous <code>ANALYZER_API_KEY</code>.
-          </p>
-        </div>
-        <button className="btn btn-primary" onClick={onClose} style={{ marginTop: 12 }}>
+
+        <IntegrationSnippet
+          apiKey={result.api_key}
+          projectName={result.project_name}
+        />
+
+        <button className="btn btn-primary" onClick={onClose} style={{ marginTop: 4 }}>
           Fermer
         </button>
       </div>
