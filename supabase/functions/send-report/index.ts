@@ -29,7 +29,7 @@ function buildEmailHtml(clients: any[], results: Record<string, any>, dnsResults
 
     const hasIssues = r.issues?.length > 0;
     const dnsEmailOk = dns ? [dns.dns_mx?.ok, dns.dns_spf?.ok, dns.dns_dmarc?.ok].filter(Boolean).length >= 2 : null;
-    const perfScore = perf?.desktop?.score ?? perf?.mobile?.score;
+    const perfScore = perf?.desktop?.performance ?? perf?.desktop?.score ?? perf?.mobile?.performance ?? perf?.mobile?.score;
     const secScore = r.http?.securityScore;
 
     const issuesList = hasIssues ? `<ul style="margin:8px 0 0;padding:0 0 0 16px">${r.issues.map((i: string) => `<li style="color:#dc2626;font-size:12px;margin:2px 0">${i}</li>`).join("")}</ul>` : "";
