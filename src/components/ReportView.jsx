@@ -193,29 +193,23 @@ export default function ReportView({
       <div class="stat"><div class="stat-label">Temps moy.</div><div class="stat-value">${Math.round(stats.avgResponseTime)}ms</div></div>
     </div>
     <table>
-      <thead><tr><th>Site</th><th>Status</th><th>HTTP</th><th>SSL</th><th>DNS</th><th>Sécurité</th><th>Email DNS</th><th>Perf</th></tr></thead>
+      <thead><tr><th>Site</th><th>Status</th><th>Email DNS</th><th>Perf PC</th><th>Sécurité</th></tr></thead>
       <tbody>${clients.map((client) => {
         const r = results[client.id];
         const dns = dnsResults?.[client.id];
         const perf = perfResults?.[client.id];
-        if (!r) return `<tr><td><strong>${client.name}</strong></td><td colspan="7" style="color:#9ca3af">Non vérifié</td></tr>`;
+        if (!r) return `<tr><td><strong>${client.name}</strong></td><td colspan="4" style="color:#9ca3af">Non vérifié</td></tr>`;
         const hasIssues = r.issues?.length > 0;
-        const httpB = getHttpBadge(r.http);
-        const sslB = getSslBadge(r.ssl);
-        const dnsB = getDnsBadge(r.dns);
         const secB = getSecurityBadge(r.http);
         const emlB = getEmailDnsBadge(dns);
         const perfB = getPerfBadge(perf);
         return `<tr>
           <td><strong>${client.name}</strong><br><small style="color:#9ca3af">${client.url}</small></td>
           <td><span class="badge ${hasIssues ? (r.issues.length > 1 ? "error" : "warn") : "ok"}">${hasIssues ? (r.issues.length > 1 ? "Erreur" : "Attention") : "OK"}</span></td>
-          <td><span class="badge ${httpB.cls}">${httpB.label}</span></td>
-          <td><span class="badge ${sslB.cls}">${sslB.label}</span></td>
-          <td><span class="badge ${dnsB.cls}">${dnsB.label}</span></td>
-          <td>${secB ? `<span class="badge ${secB.cls}">${secB.label}</span>` : "-"}</td>
           <td>${emlB ? `<span class="badge ${emlB.cls}">${emlB.label}</span>` : "-"}</td>
-          <td>${perfB ? `<span class="badge ${perfB.cls}">${perfB.label}</span>` : "-"}</td>
-        </tr>${hasIssues ? `<tr><td colspan="8"><ul style="margin:4px 0 8px 16px">${r.issues.map((i) => `<li style="color:#ef4444;font-size:12px">${i}</li>`).join("")}</ul></td></tr>` : ""}`;
+          <td>${perfB ? `<span class="badge ${perfB.cls}">${perfB.label}/100</span>` : "-"}</td>
+          <td>${secB ? `<span class="badge ${secB.cls}">${secB.label}</span>` : "-"}</td>
+        </tr>${hasIssues ? `<tr><td colspan="5"><ul style="margin:4px 0 8px 16px">${r.issues.map((i) => `<li style="color:#ef4444;font-size:12px">${i}</li>`).join("")}</ul></td></tr>` : ""}`;
       }).join("")}
       </tbody>
     </table>
@@ -321,7 +315,7 @@ export default function ReportView({
               <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13, fontFamily: "var(--mono)" }}>
                 <thead>
                   <tr style={{ borderBottom: "2px solid var(--border2)" }}>
-                    {["SITE", "STATUS", "HTTP", "SSL", "DNS", "SECURITE", "EMAIL DNS", "PERF", "VERIFIE"].map((h) => (
+                    {["SITE", "STATUS", "EMAIL DNS", "PERF PC", "SECURITE", "VERIFIE"].map((h) => (
                       <th key={h} style={{ textAlign: "left", padding: 12, color: "var(--text3)", fontSize: 11, letterSpacing: "0.08em", whiteSpace: "nowrap" }}>{h}</th>
                     ))}
                   </tr>
@@ -334,13 +328,10 @@ export default function ReportView({
                     if (!r) return (
                       <tr key={client.id} style={{ borderBottom: "1px solid var(--border)" }}>
                         <td style={{ padding: 12 }}><div style={{ fontWeight: 600 }}>{client.name}</div><div style={{ fontSize: 11, color: "var(--text3)" }}>{client.url}</div></td>
-                        <td colSpan={8} style={{ padding: 12, color: "var(--text3)" }}>Non verifie</td>
+                        <td colSpan={5} style={{ padding: 12, color: "var(--text3)" }}>Non verifie</td>
                       </tr>
                     );
                     const hasIssues = r.issues?.length > 0;
-                    const httpB = getHttpBadge(r.http);
-                    const sslB = getSslBadge(r.ssl);
-                    const dnsB = getDnsBadge(r.dns);
                     const secB = getSecurityBadge(r.http);
                     const emlB = getEmailDnsBadge(dns);
                     const perfB = getPerfBadge(perf);
@@ -348,12 +339,9 @@ export default function ReportView({
                       <tr key={client.id} style={{ borderBottom: "1px solid var(--border)" }}>
                         <td style={{ padding: 12 }}><div style={{ fontWeight: 600 }}>{client.name}</div><div style={{ fontSize: 11, color: "var(--text3)" }}>{client.url}</div></td>
                         <td style={{ padding: 12 }}><span className={`badge badge-${hasIssues ? (r.issues.length > 1 ? "error" : "warn") : "ok"}`}>{hasIssues ? (r.issues.length > 1 ? "ERREUR" : "ATTENTION") : "OK"}</span></td>
-                        <td style={{ padding: 12 }}><span className={`badge badge-${httpB.cls}`}>{httpB.label}</span></td>
-                        <td style={{ padding: 12 }}><span className={`badge badge-${sslB.cls}`}>{sslB.label}</span></td>
-                        <td style={{ padding: 12 }}><span className={`badge badge-${dnsB.cls}`}>{dnsB.label}</span></td>
-                        <td style={{ padding: 12 }}>{secB ? <span className={`badge badge-${secB.cls}`}>{secB.label}</span> : "-"}</td>
                         <td style={{ padding: 12 }}>{emlB ? <span className={`badge badge-${emlB.cls}`}>{emlB.label}</span> : "-"}</td>
                         <td style={{ padding: 12 }}>{perfB ? <span className={`badge badge-${perfB.cls}`}>{perfB.label}</span> : "-"}</td>
+                        <td style={{ padding: 12 }}>{secB ? <span className={`badge badge-${secB.cls}`}>{secB.label}</span> : "-"}</td>
                         <td style={{ padding: 12, color: "var(--text2)", fontSize: 11 }}>{new Date(r.checkedAt).toLocaleTimeString("fr-FR")}</td>
                       </tr>
                     );

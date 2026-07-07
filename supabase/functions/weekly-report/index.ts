@@ -22,22 +22,21 @@ function idleBadge(label: string): string {
 
 function buildClientRow(c: any, mon: any, dns: any, perf: any): string {
   if (!mon) {
-    return `<tr><td style="padding:12px 16px;border-bottom:1px solid #e5e7eb"><strong>${c.name}</strong><br><small style="color:#9ca3af">${c.url}</small></td><td colspan="6" style="padding:12px 16px;border-bottom:1px solid #e5e7eb;color:#9ca3af">Non vérifié</td></tr>`;
+    return `<tr><td style="padding:12px 16px;border-bottom:1px solid #e5e7eb"><strong>${c.name}</strong><br><small style="color:#9ca3af">${c.url}</small></td><td colspan="4" style="padding:12px 16px;border-bottom:1px solid #e5e7eb;color:#9ca3af">Non vérifié</td></tr>`;
   }
 
   const hasIssues = mon.issues?.length > 0;
-  const httpOk = mon.http?.ok ?? mon.http?.success;
-  const sslOk = mon.ssl?.ok ?? mon.ssl?.success;
-  const dnsOk = mon.dns?.ok ?? mon.dns?.success;
-  const sslDays = mon.ssl?.daysLeft;
   const dnsEmailOk = dns ? [dns.dns_mx?.ok, dns.dns_spf?.ok, dns.dns_dmarc?.ok].filter(Boolean).length >= 2 : null;
   const perfScore = perf?.desktop?.score ?? perf?.mobile?.score;
+  const secScore = mon.http?.securityScore;
 
-  const sslCell = !sslOk
-    ? statusBadge(false, "Invalide")
-    : sslDays && sslDays < 14
-      ? warnBadge(`${sslDays}j`)
-      : statusBadge(true, sslDays ? `${sslDays}j` : "Valide");
+  const perfCell = perfScore !== undefined
+    ? (perfScore >= 80 ? statusBadge(true, `${perfScore}/100`) : perfScore >= 50 ? warnBadge(`${perfScore}/100`) : statusBadge(false, `${perfScore}/100`))
+    : idleBadge("N/A");
+
+  const secCell = secScore !== undefined
+    ? (secScore >= 80 ? statusBadge(true, `${secScore}/100`) : secScore >= 40 ? warnBadge(`${secScore}/100`) : statusBadge(false, `${secScore}/100`))
+    : idleBadge("N/A");
 
   const issuesList = hasIssues
     ? `<ul style="margin:8px 0 0;padding:0 0 0 16px">${mon.issues.map((i: string) => `<li style="color:#dc2626;font-size:12px;margin:2px 0">${i}</li>`).join("")}</ul>`
@@ -54,20 +53,10 @@ function buildClientRow(c: any, mon: any, dns: any, perf: any): string {
         ${hasIssues ? (mon.issues.length > 1 ? statusBadge(false, "Erreur") : warnBadge("Attention")) : statusBadge(true, "OK")}
       </td>
       <td style="padding:12px 16px;border-bottom:1px solid #e5e7eb;vertical-align:top">
-        ${statusBadge(!!httpOk, mon.http?.statusCode ? String(mon.http.statusCode) : (httpOk ? "OK" : "Erreur"))}
-      </td>
-      <td style="padding:12px 16px;border-bottom:1px solid #e5e7eb;vertical-align:top">${sslCell}</td>
-      <td style="padding:12px 16px;border-bottom:1px solid #e5e7eb;vertical-align:top">
-        ${statusBadge(!!dnsOk, dnsOk ? "OK" : "Erreur")}
-      </td>
-      <td style="padding:12px 16px;border-bottom:1px solid #e5e7eb;vertical-align:top">
         ${dnsEmailOk !== null ? statusBadge(dnsEmailOk, dnsEmailOk ? "OK" : "Attention") : idleBadge("N/A")}
       </td>
-      <td style="padding:12px 16px;border-bottom:1px solid #e5e7eb;vertical-align:top">
-        ${perfScore !== undefined
-          ? (perfScore >= 80 ? statusBadge(true, `${perfScore}/100`) : perfScore >= 50 ? warnBadge(`${perfScore}/100`) : statusBadge(false, `${perfScore}/100`))
-          : idleBadge("N/A")}
-      </td>
+      <td style="padding:12px 16px;border-bottom:1px solid #e5e7eb;vertical-align:top">${perfCell}</td>
+      <td style="padding:12px 16px;border-bottom:1px solid #e5e7eb;vertical-align:top">${secCell}</td>
     </tr>`;
 }
 
@@ -123,11 +112,9 @@ function buildEmailHtml(clients: any[], monMap: Record<string, any>, dnsMap: Rec
               <tr style="background:#f9fafb;border-bottom:2px solid #e5e7eb">
                 <th style="text-align:left;padding:10px 16px;font-size:11px;color:#9ca3af;text-transform:uppercase;letter-spacing:0.06em">Site</th>
                 <th style="text-align:left;padding:10px 16px;font-size:11px;color:#9ca3af;text-transform:uppercase;letter-spacing:0.06em">Status</th>
-                <th style="text-align:left;padding:10px 16px;font-size:11px;color:#9ca3af;text-transform:uppercase;letter-spacing:0.06em">HTTP</th>
-                <th style="text-align:left;padding:10px 16px;font-size:11px;color:#9ca3af;text-transform:uppercase;letter-spacing:0.06em">SSL</th>
-                <th style="text-align:left;padding:10px 16px;font-size:11px;color:#9ca3af;text-transform:uppercase;letter-spacing:0.06em">DNS</th>
-                <th style="text-align:left;padding:10px 16px;font-size:11px;color:#9ca3af;text-transform:uppercase;letter-spacing:0.06em">Email</th>
-                <th style="text-align:left;padding:10px 16px;font-size:11px;color:#9ca3af;text-transform:uppercase;letter-spacing:0.06em">Perf</th>
+                <th style="text-align:left;padding:10px 16px;font-size:11px;color:#9ca3af;text-transform:uppercase;letter-spacing:0.06em">Email DNS</th>
+                <th style="text-align:left;padding:10px 16px;font-size:11px;color:#9ca3af;text-transform:uppercase;letter-spacing:0.06em">Perf PC</th>
+                <th style="text-align:left;padding:10px 16px;font-size:11px;color:#9ca3af;text-transform:uppercase;letter-spacing:0.06em">Sécurité</th>
               </tr>
             </thead>
             <tbody>${rows}</tbody>
