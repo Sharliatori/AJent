@@ -17,6 +17,7 @@ interface ClientPayload {
 
 interface CheckRequest {
   client: ClientPayload;
+  skip_alert?: boolean;
   smtpConfig?: {
     host: string;
     port: number;
@@ -55,7 +56,7 @@ async function checkHttp(url: string) {
     const response = await fetch(url, {
       method: "GET",
       redirect: "follow",
-      headers: { "User-Agent": "AJent Monitor/1.0" },
+      headers: { "User-Agent": "Lutecia Monitor/1.0" },
       signal: controller.signal,
     });
     clearTimeout(timeout);
@@ -117,7 +118,7 @@ async function checkSsl(hostname: string) {
     const response = await fetch(`https://${hostname}`, {
       method: "HEAD",
       redirect: "follow",
-      headers: { "User-Agent": "AJent Monitor/1.0" },
+      headers: { "User-Agent": "Lutecia Monitor/1.0" },
       signal: controller.signal,
     });
     clearTimeout(timeout);
@@ -228,7 +229,7 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    const { client, smtpConfig }: CheckRequest = await req.json();
+    const { client, skip_alert, smtpConfig }: CheckRequest = await req.json();
     const issues: string[] = [];
 
     const [httpData, sslResult, dnsResult] = await Promise.all([
@@ -315,8 +316,26 @@ Deno.serve(async (req: Request) => {
       console.error("Database error:", dbErr);
     }
 
-    if (issues.length > 0 && smtpConfig?.host) {
-      console.log(`[ALERT] Site ${client.name} has ${issues.length} issue(s):`, issues);
+    if (!skip_alert && issues.length > 0) {
+      try {
+        const alertUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/send-alert`;
+        await fetch(alertUrl, {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            client_id: client.id,
+            client_name: client.name,
+            client_url: client.url,
+            issues,
+            checked_at: result.checkedAt,
+          }),
+        });
+      } catch (alertErr) {
+        console.error("Failed to send alert:", alertErr);
+      }
     }
 
     return new Response(JSON.stringify(result), {

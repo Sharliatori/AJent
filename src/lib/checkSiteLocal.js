@@ -9,7 +9,7 @@ export async function checkSiteLocal(client) {
       method: "GET",
       redirect: "follow",
       headers: {
-        "User-Agent": "AJent Monitor/1.0",
+        "User-Agent": "Lutecia Monitor/1.0",
       },
     });
     const responseTime = Date.now() - start;

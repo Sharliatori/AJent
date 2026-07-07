@@ -1,10 +1,10 @@
-# Module Obsolescence AJent -- Documentation
+# Module Obsolescence Lutecia -- Documentation
 
 **Version : 2026-03-002**
 
 ## Vue d'ensemble
 
-Le module Obsolescence est un systeme de monitoring de dependances integre a AJent. Il recoit les rapports d'analyse envoyes par des modules embarques dans chaque application cliente, les stocke dans Supabase, et les presente via un dashboard interactif dans l'onglet "Obsolescence".
+Le module Obsolescence est un systeme de monitoring de dependances integre a Lutecia. Il recoit les rapports d'analyse envoyes par des modules embarques dans chaque application cliente, les stocke dans Supabase, et les presente via un dashboard interactif dans l'onglet "Obsolescence".
 
 ## Architecture
 
@@ -18,7 +18,7 @@ POST /functions/v1/receive-analysis (Edge Function)
 Supabase (Tables: analyzed_projects, analysis_reports, dependency_snapshots, vulnerability_findings)
    |
    v
-Dashboard AJent - Onglet Obsolescence (consultation des rapports)
+Dashboard Lutecia - Onglet Obsolescence (consultation des rapports)
 ```
 
 ## Schema de base de donnees
@@ -240,7 +240,7 @@ Desactiver un projet (soft delete).
 
 ## Flux d'onboarding d'un nouveau projet
 
-1. L'utilisateur ouvre l'onglet "Obsolescence" dans AJent
+1. L'utilisateur ouvre l'onglet "Obsolescence" dans Lutecia
 2. Il clique sur "Ajouter un projet"
 3. Il entre le nom, l'URL du projet, et optionnellement l'URL webhook
 4. Le systeme genere une api_key unique (prefixee ak_)

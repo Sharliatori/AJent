@@ -13,7 +13,7 @@ function httpCheck(url) {
     const mod = url.startsWith("https") ? https : http;
     const req = mod.get(
       url,
-      { timeout: 10000, headers: { "User-Agent": "AJent-Monitor/1.0" } },
+      { timeout: 10000, headers: { "User-Agent": "Lutecia-Monitor/1.0" } },
       (res) => {
         const duration = Date.now() - start;
         resolve({
@@ -110,15 +110,15 @@ async function sendAlert({ client, issues, smtpConfig }) {
   const issueList = issues.map((i) => `<li>❌ ${i}</li>`).join("");
 
   await transporter.sendMail({
-    from: `"AJent Monitor" <${smtpConfig.user}>`,
+    from: `"Lutecia Monitor" <${smtpConfig.user}>`,
     to: smtpConfig.alertTo || smtpConfig.user,
-    subject: `⚠️ Alerte AJent : problème détecté sur ${client.name}`,
+    subject: `⚠️ Alerte Lutecia : problème détecté sur ${client.name}`,
     html: `
       <div style="font-family:sans-serif;max-width:600px;margin:auto">
         <h2 style="color:#e53e3e">⚠️ Problème détecté</h2>
         <p>Le monitoring a détecté des anomalies sur <strong>${client.name}</strong> (${client.url}) :</p>
         <ul style="line-height:1.8">${issueList}</ul>
-        <p style="color:#666;font-size:12px">AJent Monitor — ${new Date().toLocaleString("fr-FR")}</p>
+        <p style="color:#666;font-size:12px">Lutecia Monitor — ${new Date().toLocaleString("fr-FR")}</p>
       </div>
     `,
   });

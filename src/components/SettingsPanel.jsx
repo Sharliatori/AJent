@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { keepaliveService } from "../lib/supabase";
 
 export default function SettingsPanel({ smtpConfig, onSave }) {
   const [config, setConfig] = useState({
@@ -10,6 +11,16 @@ export default function SettingsPanel({ smtpConfig, onSave }) {
   });
 
   const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState(null);
+  const [testLoading, setTestLoading] = useState(false);
+  const [testResult, setTestResult] = useState(null);
+
+  // Keep-alive state
+  const [lastPing, setLastPing] = useState(null);
+  const [pingLoading, setPingLoading] = useState(false);
+  const [pingError, setPingError] = useState(null);
+  const [pingSuccess, setPingSuccess] = useState(false);
 
   useEffect(() => {
     if (smtpConfig?.host) {
@@ -23,8 +34,78 @@ export default function SettingsPanel({ smtpConfig, onSave }) {
     }
   }, [smtpConfig]);
 
-  const [saving, setSaving] = useState(false);
-  const [saveError, setSaveError] = useState(null);
+  useEffect(() => {
+    keepaliveService.getLastPing().then(setLastPing).catch(() => {});
+  }, []);
+
+  const handlePing = async () => {
+    setPingLoading(true);
+    setPingError(null);
+    setPingSuccess(false);
+    try {
+      const result = await keepaliveService.ping();
+      setLastPing({ pinged_at: result.pinged_at, status: "manual" });
+      setPingSuccess(true);
+      setTimeout(() => setPingSuccess(false), 4000);
+    } catch (err) {
+      setPingError(err.message || "Erreur de connexion");
+    } finally {
+      setPingLoading(false);
+    }
+  };
+
+  const getPingAge = () => {
+    if (!lastPing?.pinged_at) return null;
+    const ms = Date.now() - new Date(lastPing.pinged_at).getTime();
+    const days = Math.floor(ms / 86400000);
+    const hours = Math.floor((ms % 86400000) / 3600000);
+    if (days > 0) return `il y a ${days}j ${hours}h`;
+    const mins = Math.floor((ms % 3600000) / 60000);
+    if (hours > 0) return `il y a ${hours}h ${mins}min`;
+    return `il y a ${mins} min`;
+  };
+
+  const isPingHealthy = () => {
+    if (!lastPing?.pinged_at) return false;
+    const days = (Date.now() - new Date(lastPing.pinged_at).getTime()) / 86400000;
+    return days < 4;
+  };
+
+  const handleTestSmtp = async () => {
+    if (!config.host || !config.user || !config.pass) {
+      setTestResult({ ok: false, message: "Remplissez le serveur, l'utilisateur et le mot de passe avant de tester.", hint: "" });
+      return;
+    }
+    setTestLoading(true);
+    setTestResult(null);
+    try {
+      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/test-smtp`;
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          host: config.host,
+          port: config.port,
+          user: config.user,
+          pass: config.pass,
+          alertTo: config.alertTo || null,
+        }),
+      });
+      const data = await response.json();
+      if (data.success) {
+        setTestResult({ ok: true, message: `Email de test envoyé à ${data.to}` });
+      } else {
+        setTestResult({ ok: false, message: data.error || "Échec", hint: data.hint || "" });
+      }
+    } catch (err) {
+      setTestResult({ ok: false, message: err.message || "Erreur réseau", hint: "" });
+    } finally {
+      setTestLoading(false);
+    }
+  };
 
   const handleSave = async () => {
     if (!config.host || !config.user || !config.pass) {
@@ -50,13 +131,7 @@ export default function SettingsPanel({ smtpConfig, onSave }) {
       setSaveError(null);
       try {
         await onSave({});
-        setConfig({
-          host: "",
-          port: 587,
-          user: "",
-          pass: "",
-          alertTo: "",
-        });
+        setConfig({ host: "", port: 587, user: "", pass: "", alertTo: "" });
       } catch (err) {
         setSaveError(err.message || "Erreur lors de la suppression");
       } finally {
@@ -66,9 +141,155 @@ export default function SettingsPanel({ smtpConfig, onSave }) {
   };
 
   const hasConfig = smtpConfig?.host && smtpConfig?.user;
+  const pingAge = getPingAge();
+  const pingHealthy = isPingHealthy();
 
   return (
     <div>
+      {/* ─── Database health card ─── */}
+      <div style={{ marginBottom: 32 }}>
+        <h2
+          style={{
+            fontFamily: "var(--mono)",
+            fontSize: 14,
+            letterSpacing: "0.08em",
+            color: "var(--text2)",
+            marginBottom: 16,
+          }}
+        >
+          SANTE DE LA BASE DE DONNEES
+        </h2>
+
+        <div
+          className="card"
+          style={{
+            maxWidth: 700,
+            background: pingHealthy
+              ? "rgba(0,212,168,0.04)"
+              : lastPing
+              ? "rgba(245,158,11,0.04)"
+              : "rgba(99,99,110,0.04)",
+            borderColor: pingHealthy
+              ? "rgba(0,212,168,0.25)"
+              : lastPing
+              ? "rgba(245,158,11,0.25)"
+              : "var(--border)",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
+            <div style={{ flex: 1 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
+                <h3 style={{ fontSize: 14, fontWeight: 600 }}>Keep-Alive automatique</h3>
+                {lastPing ? (
+                  <span
+                    className={pingHealthy ? "badge badge-ok" : "badge badge-warn"}
+                    style={{ fontSize: 11, padding: "3px 10px" }}
+                  >
+                    {pingHealthy ? "● Actif" : "⚠ Ancien"}
+                  </span>
+                ) : (
+                  <span
+                    className="badge"
+                    style={{
+                      fontSize: 11,
+                      padding: "3px 10px",
+                      background: "var(--bg3)",
+                      color: "var(--text3)",
+                    }}
+                  >
+                    Aucun ping
+                  </span>
+                )}
+              </div>
+              <p style={{ fontSize: 12, color: "var(--text2)", lineHeight: 1.6 }}>
+                Un job pg_cron tourne toutes les 72h pour maintenir la base active.
+                {lastPing ? (
+                  <>
+                    {" "}Dernier ping :{" "}
+                    <span style={{ color: "var(--text1)", fontFamily: "var(--mono)" }}>
+                      {new Date(lastPing.pinged_at).toLocaleString("fr-FR")}
+                    </span>
+                    {" "}({pingAge})
+                    {lastPing.status && (
+                      <span style={{ color: "var(--text3)" }}> via {lastPing.status}</span>
+                    )}
+                  </>
+                ) : (
+                  " Aucun ping enregistre. Cliquez sur Tester pour initialiser."
+                )}
+              </p>
+              {pingError && (
+                <p style={{ fontSize: 12, color: "var(--danger)", marginTop: 6 }}>
+                  Erreur : {pingError}
+                </p>
+              )}
+              {pingSuccess && (
+                <p style={{ fontSize: 12, color: "var(--ok)", marginTop: 6 }}>
+                  Ping reussi — base de donnees operationnelle.
+                </p>
+              )}
+            </div>
+            <button
+              className="btn btn-secondary"
+              onClick={handlePing}
+              disabled={pingLoading}
+              style={{ whiteSpace: "nowrap", flexShrink: 0 }}
+            >
+              {pingLoading ? (
+                <><span className="spinner" /> Test en cours...</>
+              ) : (
+                "Tester la connexion"
+              )}
+            </button>
+          </div>
+
+          <div
+            style={{
+              marginTop: 16,
+              paddingTop: 14,
+              borderTop: "1px solid var(--border)",
+              display: "flex",
+              gap: 24,
+              flexWrap: "wrap",
+            }}
+          >
+            <div>
+              <div style={{ fontSize: 11, color: "var(--text3)", fontFamily: "var(--mono)", letterSpacing: "0.06em", marginBottom: 4 }}>
+                FREQUENCE
+              </div>
+              <div style={{ fontSize: 13, fontFamily: "var(--mono)", color: "var(--text1)" }}>
+                toutes les 72h
+              </div>
+            </div>
+            <div>
+              <div style={{ fontSize: 11, color: "var(--text3)", fontFamily: "var(--mono)", letterSpacing: "0.06em", marginBottom: 4 }}>
+                PLANIFICATEUR
+              </div>
+              <div style={{ fontSize: 13, fontFamily: "var(--mono)", color: "var(--text1)" }}>
+                pg_cron (natif Supabase)
+              </div>
+            </div>
+            <div>
+              <div style={{ fontSize: 11, color: "var(--text3)", fontFamily: "var(--mono)", letterSpacing: "0.06em", marginBottom: 4 }}>
+                RETENTION LOGS
+              </div>
+              <div style={{ fontSize: 13, fontFamily: "var(--mono)", color: "var(--text1)" }}>
+                30 jours
+              </div>
+            </div>
+            <div>
+              <div style={{ fontSize: 11, color: "var(--text3)", fontFamily: "var(--mono)", letterSpacing: "0.06em", marginBottom: 4 }}>
+                SEUIL D'ALERTE
+              </div>
+              <div style={{ fontSize: 13, fontFamily: "var(--mono)", color: "var(--text1)" }}>
+                {"> 4 jours sans ping"}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ─── SMTP section ─── */}
       <div
         style={{
           display: "flex",
@@ -196,12 +417,35 @@ export default function SettingsPanel({ smtpConfig, onSave }) {
           <button className="btn btn-primary" onClick={handleSave} disabled={saving}>
             {saving ? "Enregistrement..." : saved ? "Enregistre" : "Enregistrer"}
           </button>
+          <button
+            className="btn btn-secondary"
+            onClick={handleTestSmtp}
+            disabled={testLoading || saving}
+          >
+            {testLoading ? <><span className="spinner" /> Test en cours...</> : "Tester"}
+          </button>
           {hasConfig && (
             <button className="btn btn-danger" onClick={handleClear} disabled={saving}>
               Supprimer la configuration
             </button>
           )}
         </div>
+        {testResult && (
+          <div style={{
+            marginTop: 12,
+            padding: "10px 14px",
+            background: testResult.ok ? "rgba(0,212,168,0.08)" : "rgba(239,68,68,0.08)",
+            border: `1px solid ${testResult.ok ? "rgba(0,212,168,0.25)" : "rgba(239,68,68,0.25)"}`,
+            borderRadius: 8,
+            fontSize: 13,
+            color: testResult.ok ? "var(--ok)" : "var(--danger)",
+          }}>
+            {testResult.ok ? "✓ " : "✗ "}{testResult.message}
+            {testResult.hint && (
+              <div style={{ marginTop: 4, fontSize: 12, color: "var(--warn)" }}>{testResult.hint}</div>
+            )}
+          </div>
+        )}
         {saveError && (
           <div style={{
             marginTop: 12,
@@ -271,10 +515,10 @@ export default function SettingsPanel({ smtpConfig, onSave }) {
         }}
       >
         <h4 style={{ fontSize: 12, fontWeight: 600, marginBottom: 8, color: "var(--warn)" }}>
-          ⚠ Note de sécurité
+          Note de securite
         </h4>
         <p style={{ fontSize: 12, color: "var(--text2)", lineHeight: 1.6 }}>
-          Les identifiants SMTP sont stockés en local dans votre navigateur.
+          Les identifiants SMTP sont stockés en base de données Supabase.
           Utilisez toujours un mot de passe d'application plutôt que votre mot
           de passe principal pour plus de sécurité.
         </p>

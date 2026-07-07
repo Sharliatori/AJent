@@ -79,7 +79,7 @@ export default function IntegrationSnippet({ apiKey, projectName, webhookUrl }) 
 
       <div className="obs-snippet-footer">
         Le module embarque dans votre application utilisera ces variables pour
-        envoyer automatiquement ses rapports d'analyse a AJent.
+        envoyer automatiquement ses rapports d'analyse a Lutecia.
       </div>
 
       {webhookUrl && (

@@ -194,6 +194,35 @@ export const performanceService = {
   },
 };
 
+export const keepaliveService = {
+  async getLastPing() {
+    const { data, error } = await supabase
+      .from("keepalive_log")
+      .select("*")
+      .order("pinged_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (error) throw error;
+    return data;
+  },
+
+  async ping() {
+    const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/keep-alive`;
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        "Content-Type": "application/json",
+      },
+    });
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({}));
+      throw new Error(body.error || `HTTP ${response.status}`);
+    }
+    return response.json();
+  },
+};
+
 export const smtpService = {
   async get() {
     const { data, error } = await supabase
@@ -237,5 +266,127 @@ export const smtpService = {
         .eq("id", existing.id);
       if (error) throw error;
     }
+  },
+};
+
+export const dailySnapshotService = {
+  async getLatestSlots() {
+    const today = new Date().toISOString().split("T")[0];
+    const { data, error } = await supabase
+      .from("daily_snapshots")
+      .select("slot, snapshot_date, checked_at, issues, http_ok, ssl_ok, dns_ok, client_id")
+      .eq("snapshot_date", today)
+      .order("checked_at", { ascending: false });
+    if (error) throw error;
+    return data || [];
+  },
+
+  async triggerCheck(slot) {
+    const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/daily-check`;
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ slot }),
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || `HTTP ${response.status}`);
+    return data;
+  },
+
+  async triggerWeeklyReport() {
+    const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/weekly-report`;
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({}),
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || `HTTP ${response.status}`);
+    return data;
+  },
+};
+
+export const recipientsService = {
+  async getAll() {
+    const { data, error } = await supabase
+      .from("report_recipients")
+      .select("*")
+      .order("created_at", { ascending: false });
+    if (error) throw error;
+    return data || [];
+  },
+
+  async getByClient(clientId) {
+    const { data, error } = await supabase
+      .from("report_recipients")
+      .select("*")
+      .eq("client_id", clientId)
+      .order("created_at", { ascending: false });
+    if (error) throw error;
+    return data || [];
+  },
+
+  async getGlobal() {
+    const { data, error } = await supabase
+      .from("report_recipients")
+      .select("*")
+      .is("client_id", null)
+      .order("created_at", { ascending: false });
+    if (error) throw error;
+    return data || [];
+  },
+
+  async create(recipient) {
+    const res = await fetch(`${supabaseUrl}/functions/v1/manage-recipients`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${supabaseAnonKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "create", recipient }),
+    });
+    const body = await res.json();
+    if (!res.ok) throw new Error(body.error || `HTTP ${res.status}`);
+    return body.data;
+  },
+
+  async update(id, updates) {
+    const res = await fetch(`${supabaseUrl}/functions/v1/manage-recipients`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${supabaseAnonKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "update", id, updates }),
+    });
+    const body = await res.json();
+    if (!res.ok) throw new Error(body.error || `HTTP ${res.status}`);
+    return body.data;
+  },
+
+  async delete(id) {
+    const res = await fetch(`${supabaseUrl}/functions/v1/manage-recipients`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${supabaseAnonKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "delete", id }),
+    });
+    const body = await res.json();
+    if (!res.ok) throw new Error(body.error || `HTTP ${res.status}`);
+  },
+
+  async sendReport(clientId) {
+    const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-report`;
+    const body = clientId ? { client_id: clientId } : {};
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || `HTTP ${response.status}`);
+    return data;
   },
 };

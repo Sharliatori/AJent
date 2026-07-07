@@ -1,15 +1,16 @@
 import { useState, useCallback, useEffect } from "react";
+import { CloudCog } from "lucide-react";
 import defaultClients from "./data/clients.json";
 import Dashboard from "./components/Dashboard";
 import ReportView from "./components/ReportView";
 import SettingsPanel from "./components/SettingsPanel";
 import DnsEmailPanel from "./components/DnsEmailPanel";
+import RecipientsPanel from "./components/RecipientsPanel";
 import { clientsService, smtpService } from "./lib/supabase";
 import { checkSiteViaEdge } from "./lib/checkSiteEdge";
 import { checkDnsViaEdge } from "./lib/checkDnsEdge";
 import { checkPerfViaEdge } from "./lib/checkPerfEdge";
 import PerformancePanel from "./components/PerformancePanel";
-import ObsolescencePanel from "./components/ObsolescencePanel";
 import "./App.css";
 
 export default function App() {
@@ -175,8 +176,8 @@ export default function App() {
       <header className="header">
         <div className="header-inner">
           <div className="logo">
-            <span className="logo-icon">◈</span>
-            <span className="logo-text">AJent</span>
+            <CloudCog size={20} className="logo-icon" />
+            <span className="logo-text">Lutec<span style={{ color: "var(--accent)" }}>.IA</span></span>
           </div>
           <nav className="nav">
             <button
@@ -198,16 +199,16 @@ export default function App() {
               Performance
             </button>
             <button
-              className={`nav-btn ${view === "obsolescence" ? "active" : ""}`}
-              onClick={() => setView("obsolescence")}
-            >
-              Obsolescence
-            </button>
-            <button
               className={`nav-btn ${view === "report" ? "active" : ""}`}
               onClick={() => setView("report")}
             >
               Rapport
+            </button>
+            <button
+              className={`nav-btn ${view === "recipients" ? "active" : ""}`}
+              onClick={() => setView("recipients")}
+            >
+              Destinataires
             </button>
             <button
               className={`nav-btn ${view === "settings" ? "active" : ""}`}
@@ -248,9 +249,23 @@ export default function App() {
             onCheckAllPerf={checkAllPerf}
           />
         )}
-        {view === "obsolescence" && <ObsolescencePanel />}
         {view === "report" && (
-          <ReportView clients={clients} results={results} />
+          <ReportView
+            clients={clients}
+            results={results}
+            dnsResults={dnsResults}
+            perfResults={perfResults}
+            loading={loading}
+            dnsLoading={dnsLoading}
+            perfLoading={perfLoading}
+            smtpConfig={smtpConfig}
+            onCheck={checkClient}
+            onCheckDns={checkDns}
+            onCheckPerf={checkPerf}
+          />
+        )}
+        {view === "recipients" && (
+          <RecipientsPanel clients={clients} smtpConfig={smtpConfig} />
         )}
         {view === "settings" && (
           <SettingsPanel smtpConfig={smtpConfig} onSave={saveSmtp} />
