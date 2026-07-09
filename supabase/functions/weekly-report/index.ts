@@ -9,26 +9,32 @@ const corsHeaders = {
 };
 
 function statusBadge(ok: boolean, label: string): string {
-  return `<span style="display:inline-block;padding:3px 10px;border-radius:4px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;background:${ok ? "#d1fae5" : "#fee2e2"};color:${ok ? "#065f46" : "#991b1b"}">${label}</span>`;
+  return `<span style="display:inline-block;padding:4px 14px;border-radius:4px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;background:${ok ? "#d1fae5" : "#fee2e2"};color:${ok ? "#065f46" : "#991b1b"}">${label}</span>`;
 }
 
 function warnBadge(label: string): string {
-  return `<span style="display:inline-block;padding:3px 10px;border-radius:4px;font-size:11px;font-weight:700;text-transform:uppercase;background:#fef3c7;color:#92400e">${label}</span>`;
+  return `<span style="display:inline-block;padding:4px 14px;border-radius:4px;font-size:12px;font-weight:700;text-transform:uppercase;background:#fef3c7;color:#92400e">${label}</span>`;
 }
 
 function idleBadge(label: string): string {
-  return `<span style="display:inline-block;padding:3px 10px;border-radius:4px;font-size:11px;background:#f3f4f6;color:#6b7280">${label}</span>`;
+  return `<span style="display:inline-block;padding:4px 14px;border-radius:4px;font-size:12px;background:#f3f4f6;color:#6b7280">${label}</span>`;
 }
 
-const labelStyle = `font-size:10px;color:#9ca3af;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:4px`;
+function shortHost(url: string): string {
+  try { return new URL(url).hostname; } catch { return url; }
+}
+
+function kvRow(label: string, badge: string): string {
+  return `<tr><td style="padding:6px 0;font-size:12px;color:#6b7280">${label}</td><td style="padding:6px 0;text-align:right">${badge}</td></tr>`;
+}
 
 function buildClientCard(c: any, mon: any, dns: any, perf: any): string {
   if (!mon) {
     return `
-      <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:14px 16px;margin-bottom:10px">
-        <strong style="color:#111827;font-size:13px">${c.name}</strong>
-        <br><span style="color:#9ca3af;font-size:11px">${c.url}</span>
-        <div style="margin-top:8px;color:#9ca3af;font-size:12px">Non vérifié</div>
+      <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:16px;margin-bottom:12px;text-align:center">
+        <div style="margin-bottom:8px">${idleBadge("Non vérifié")}</div>
+        <strong style="color:#111827;font-size:14px">${c.name}</strong>
+        <div style="color:#9ca3af;font-size:11px;margin-top:2px">${shortHost(c.url)}</div>
       </div>`;
   }
 
@@ -37,7 +43,7 @@ function buildClientCard(c: any, mon: any, dns: any, perf: any): string {
   const perfScore = perf?.desktop?.performance ?? perf?.desktop?.score ?? perf?.mobile?.performance ?? perf?.mobile?.score;
   const secScore = mon.http?.securityScore;
 
-  const statusCell = hasIssues ? (mon.issues.length > 1 ? statusBadge(false, "Erreur") : warnBadge("Attention")) : statusBadge(true, "OK");
+  const statusBig = hasIssues ? (mon.issues.length > 1 ? statusBadge(false, "Erreur") : warnBadge("Attention")) : statusBadge(true, "OK");
   const dnsCell = dnsEmailOk !== null ? statusBadge(dnsEmailOk, dnsEmailOk ? "OK" : "Attention") : idleBadge("N/A");
   const perfCell = perfScore !== undefined ? (perfScore >= 80 ? statusBadge(true, `${perfScore}/100`) : perfScore >= 50 ? warnBadge(`${perfScore}/100`) : statusBadge(false, `${perfScore}/100`)) : idleBadge("N/A");
   const secCell = secScore !== undefined ? (secScore >= 80 ? statusBadge(true, `${secScore}/100`) : secScore >= 40 ? warnBadge(`${secScore}/100`) : statusBadge(false, `${secScore}/100`)) : idleBadge("N/A");
@@ -47,31 +53,16 @@ function buildClientCard(c: any, mon: any, dns: any, perf: any): string {
     : "";
 
   return `
-    <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:14px 16px;margin-bottom:10px">
+    <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:16px;margin-bottom:12px">
+      <div style="text-align:center;margin-bottom:12px">${statusBig}</div>
+      <div style="text-align:center;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid #e5e7eb">
+        <strong style="color:#111827;font-size:14px">${c.name}</strong>
+        <div style="color:#9ca3af;font-size:11px;margin-top:2px">${shortHost(c.url)}</div>
+      </div>
       <table style="width:100%;border-collapse:collapse">
-        <tr>
-          <td style="vertical-align:middle;padding:0">
-            <strong style="color:#111827;font-size:13px">${c.name}</strong>
-            <br><span style="color:#9ca3af;font-size:11px">${c.url}</span>
-          </td>
-          <td style="vertical-align:middle;padding:0;text-align:right;white-space:nowrap">${statusCell}</td>
-        </tr>
-      </table>
-      <table style="width:100%;border-collapse:collapse;margin-top:10px">
-        <tr>
-          <td style="width:50%;vertical-align:top;padding:0 8px 0 0">
-            <div style="${labelStyle}">Email DNS</div>${dnsCell}
-          </td>
-          <td style="width:50%;vertical-align:top;padding:0">
-            <div style="${labelStyle}">Perf PC</div>${perfCell}
-          </td>
-        </tr>
-        <tr>
-          <td style="width:50%;vertical-align:top;padding:8px 8px 0 0">
-            <div style="${labelStyle}">Sécurité</div>${secCell}
-          </td>
-          <td style="width:50%;vertical-align:top;padding:8px 0 0 0"></td>
-        </tr>
+        ${kvRow("Email DNS", dnsCell)}
+        ${kvRow("Performance", perfCell)}
+        ${kvRow("Sécurité", secCell)}
       </table>
       ${issuesList}
     </div>`;

@@ -8,6 +8,10 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
 };
 
+function shortHost(url: string): string {
+  try { return new URL(url).hostname; } catch { return url; }
+}
+
 function buildEmailHtml(clients: any[], results: Record<string, any>, dnsResults: Record<string, any>, perfResults: Record<string, any>, clientName?: string): string {
   const now = new Date().toLocaleString("fr-FR");
   const allOk = clients.every((c) => !results[c.id]?.issues?.length);
@@ -15,13 +19,14 @@ function buildEmailHtml(clients: any[], results: Record<string, any>, dnsResults
   const alertCount = clients.filter(c => results[c.id]?.issues?.length > 0).length;
 
   const sBadge = (ok: boolean, label: string) =>
-    `<span style="display:inline-block;padding:3px 10px;border-radius:4px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;background:${ok ? "#d1fae5" : "#fee2e2"};color:${ok ? "#065f46" : "#991b1b"}">${label}</span>`;
+    `<span style="display:inline-block;padding:4px 14px;border-radius:4px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;background:${ok ? "#d1fae5" : "#fee2e2"};color:${ok ? "#065f46" : "#991b1b"}">${label}</span>`;
   const wBadge = (label: string) =>
-    `<span style="display:inline-block;padding:3px 10px;border-radius:4px;font-size:11px;font-weight:700;text-transform:uppercase;background:#fef3c7;color:#92400e">${label}</span>`;
+    `<span style="display:inline-block;padding:4px 14px;border-radius:4px;font-size:12px;font-weight:700;text-transform:uppercase;background:#fef3c7;color:#92400e">${label}</span>`;
   const iBadge = (label: string) =>
-    `<span style="display:inline-block;padding:3px 10px;border-radius:4px;font-size:11px;background:#f3f4f6;color:#6b7280">${label}</span>`;
+    `<span style="display:inline-block;padding:4px 14px;border-radius:4px;font-size:12px;background:#f3f4f6;color:#6b7280">${label}</span>`;
 
-  const labelStyle = `font-size:10px;color:#9ca3af;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:4px`;
+  const kvRow = (label: string, badge: string) =>
+    `<tr><td style="padding:6px 0;font-size:12px;color:#6b7280">${label}</td><td style="padding:6px 0;text-align:right">${badge}</td></tr>`;
 
   const cards = clients.map((c) => {
     const r = results[c.id];
@@ -29,10 +34,10 @@ function buildEmailHtml(clients: any[], results: Record<string, any>, dnsResults
     const perf = perfResults[c.id];
 
     if (!r) return `
-      <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:14px 16px;margin-bottom:10px">
-        <strong style="color:#111827;font-size:13px">${c.name}</strong>
-        <br><span style="color:#9ca3af;font-size:11px">${c.url}</span>
-        <div style="margin-top:8px;color:#9ca3af;font-size:12px">Non vérifié</div>
+      <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:16px;margin-bottom:12px;text-align:center">
+        <div style="margin-bottom:8px">${iBadge("Non vérifié")}</div>
+        <strong style="color:#111827;font-size:14px">${c.name}</strong>
+        <div style="color:#9ca3af;font-size:11px;margin-top:2px">${shortHost(c.url)}</div>
       </div>`;
 
     const hasIssues = r.issues?.length > 0;
@@ -40,7 +45,7 @@ function buildEmailHtml(clients: any[], results: Record<string, any>, dnsResults
     const perfScore = perf?.desktop?.performance ?? perf?.desktop?.score ?? perf?.mobile?.performance ?? perf?.mobile?.score;
     const secScore = r.http?.securityScore;
 
-    const statusCell = hasIssues ? (r.issues.length > 1 ? sBadge(false, "Erreur") : wBadge("Attention")) : sBadge(true, "OK");
+    const statusBig = hasIssues ? (r.issues.length > 1 ? sBadge(false, "Erreur") : wBadge("Attention")) : sBadge(true, "OK");
     const dnsCell = dnsEmailOk !== null ? sBadge(dnsEmailOk, dnsEmailOk ? "OK" : "Attention") : iBadge("N/A");
     const perfCell = perfScore !== undefined ? (perfScore >= 80 ? sBadge(true, `${perfScore}/100`) : perfScore >= 50 ? wBadge(`${perfScore}/100`) : sBadge(false, `${perfScore}/100`)) : iBadge("N/A");
     const secCell = secScore !== undefined ? (secScore >= 80 ? sBadge(true, `${secScore}/100`) : secScore >= 40 ? wBadge(`${secScore}/100`) : sBadge(false, `${secScore}/100`)) : iBadge("N/A");
@@ -50,31 +55,16 @@ function buildEmailHtml(clients: any[], results: Record<string, any>, dnsResults
       : "";
 
     return `
-      <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:14px 16px;margin-bottom:10px">
+      <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:16px;margin-bottom:12px">
+        <div style="text-align:center;margin-bottom:12px">${statusBig}</div>
+        <div style="text-align:center;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid #e5e7eb">
+          <strong style="color:#111827;font-size:14px">${c.name}</strong>
+          <div style="color:#9ca3af;font-size:11px;margin-top:2px">${shortHost(c.url)}</div>
+        </div>
         <table style="width:100%;border-collapse:collapse">
-          <tr>
-            <td style="vertical-align:middle;padding:0">
-              <strong style="color:#111827;font-size:13px">${c.name}</strong>
-              <br><span style="color:#9ca3af;font-size:11px">${c.url}</span>
-            </td>
-            <td style="vertical-align:middle;padding:0;text-align:right;white-space:nowrap">${statusCell}</td>
-          </tr>
-        </table>
-        <table style="width:100%;border-collapse:collapse;margin-top:10px">
-          <tr>
-            <td style="width:50%;vertical-align:top;padding:0 8px 0 0">
-              <div style="${labelStyle}">Email DNS</div>${dnsCell}
-            </td>
-            <td style="width:50%;vertical-align:top;padding:0">
-              <div style="${labelStyle}">Perf PC</div>${perfCell}
-            </td>
-          </tr>
-          <tr>
-            <td style="width:50%;vertical-align:top;padding:8px 8px 0 0">
-              <div style="${labelStyle}">Sécurité</div>${secCell}
-            </td>
-            <td style="width:50%;vertical-align:top;padding:8px 0 0 0"></td>
-          </tr>
+          ${kvRow("Email DNS", dnsCell)}
+          ${kvRow("Performance", perfCell)}
+          ${kvRow("Sécurité", secCell)}
         </table>
         ${issuesList}
       </div>`;
