@@ -250,9 +250,7 @@ Deno.serve(async (req: Request) => {
       if (httpResult.responseTime > 5000) {
         issues.push(`Temps de reponse lent: ${httpResult.responseTime}ms`);
       }
-      if (httpResult.ttfb > 2000) {
-        issues.push(`TTFB lent: ${httpResult.ttfb}ms`);
-      }
+
       if (httpResult.contentLength > 0 && httpResult.contentLength < 100) {
         issues.push("Contenu HTML trop court (possible erreur)");
       }
