@@ -190,14 +190,16 @@ Deno.serve(async (req: Request) => {
           changes.push("DNS non résolu");
         }
 
+        const isTtfbIssue = (i: string) => /ttfb/i.test(i);
+
         const morningIssueSet = new Set(morning.issues ?? []);
-        const newIssues = (evening.issues ?? []).filter((i: string) => !morningIssueSet.has(i));
+        const newIssues = (evening.issues ?? []).filter((i: string) => !morningIssueSet.has(i) && !isTtfbIssue(i));
         if (newIssues.length > 0) {
           changes.push(`Nouvelle${newIssues.length > 1 ? "s" : ""} alerte${newIssues.length > 1 ? "s" : ""}: ${newIssues.join(" | ")}`);
         }
 
         const eveningIssueSet = new Set(evening.issues ?? []);
-        const resolved = (morning.issues ?? []).filter((i: string) => !eveningIssueSet.has(i));
+        const resolved = (morning.issues ?? []).filter((i: string) => !eveningIssueSet.has(i) && !isTtfbIssue(i));
         if (resolved.length > 0) {
           changes.push(`Alerte${resolved.length > 1 ? "s" : ""} résolue${resolved.length > 1 ? "s" : ""}: ${resolved.join(" | ")}`);
         }
