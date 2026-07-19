@@ -11,6 +11,7 @@ import { checkSiteViaEdge } from "./lib/checkSiteEdge";
 import { checkDnsViaEdge } from "./lib/checkDnsEdge";
 import { checkPerfViaEdge } from "./lib/checkPerfEdge";
 import PerformancePanel from "./components/PerformancePanel";
+import PortalAdminPanel from "./components/admin/PortalAdminPanel";
 import "./App.css";
 
 export default function App() {
@@ -216,6 +217,12 @@ export default function App() {
             >
               Paramètres
             </button>
+            <button
+              className={`nav-btn ${view === "portal-admin" ? "active" : ""}`}
+              onClick={() => setView("portal-admin")}
+            >
+              Portail Client
+            </button>
           </nav>
         </div>
       </header>
@@ -269,6 +276,9 @@ export default function App() {
         )}
         {view === "settings" && (
           <SettingsPanel smtpConfig={smtpConfig} onSave={saveSmtp} />
+        )}
+        {view === "portal-admin" && (
+          <PortalAdminPanel clients={clients} />
         )}
       </main>
     </div>
