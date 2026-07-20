@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "./AuthContext";
-import { CloudCog, Mail, Lock, User, Eye, EyeOff, CircleAlert as AlertCircle } from "lucide-react";
+import { CloudCog, Mail, Lock, User, Eye, EyeOff, AlertCircle } from "lucide-react";
 
 export default function LoginPage() {
-  const { signInWithEmail, signUpWithEmail, signInWithGoogle } = useAuth();
+  const { signInWithEmail, signUpWithEmail } = useAuth();
   const navigate = useNavigate();
   const [mode, setMode] = useState("login");
   const [email, setEmail] = useState("");
@@ -32,84 +32,79 @@ export default function LoginPage() {
     }
   }
 
-  async function handleGoogle() {
-    setError("");
-    try {
-      await signInWithGoogle();
-    } catch (err) {
-      setError(err.message || "Erreur de connexion Google");
-    }
-  }
-
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 px-4">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center gap-2 mb-2">
-            <CloudCog className="w-8 h-8 text-teal-600" />
-            <span className="text-2xl font-bold text-slate-900 dark:text-white">
-              Lutec<span className="text-teal-600">.IA</span>
+    <div style={{ background: "linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: "16px", fontFamily: "'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif" }}>
+      <div style={{ width: "100%", maxWidth: "420px" }}>
+        <div style={{ textAlign: "center", marginBottom: "32px" }}>
+          <div style={{ display: "inline-flex", alignItems: "center", gap: "10px", marginBottom: "8px" }}>
+            <CloudCog style={{ width: "32px", height: "32px", color: "#0d9488" }} />
+            <span style={{ fontSize: "24px", fontWeight: "700", color: "#0f172a" }}>
+              Lutec<span style={{ color: "#0d9488" }}>.IA</span>
             </span>
           </div>
-          <p className="text-slate-500 dark:text-slate-400 text-sm">
-            Espace client - Suivi de votre site
+          <p style={{ color: "#64748b", fontSize: "14px" }}>
+            Espace client — Suivi de votre site
           </p>
         </div>
 
-        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 p-8">
-          <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-6 text-center">
+        <div style={{ background: "#ffffff", borderRadius: "16px", boxShadow: "0 20px 60px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.04)", border: "1px solid #e2e8f0", padding: "32px" }}>
+          <h2 style={{ fontSize: "20px", fontWeight: "600", color: "#0f172a", marginBottom: "24px", textAlign: "center" }}>
             {mode === "login" ? "Connexion" : "Creer un compte"}
           </h2>
 
           {error && (
-            <div className="flex items-center gap-2 p-3 mb-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-400 text-sm">
-              <AlertCircle className="w-4 h-4 flex-shrink-0" />
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", padding: "12px", marginBottom: "16px", background: "#fef2f2", border: "1px solid #fecaca", borderRadius: "8px", color: "#b91c1c", fontSize: "13px" }}>
+              <AlertCircle style={{ width: "16px", height: "16px", flexShrink: 0 }} />
               <span>{error}</span>
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
             {mode === "signup" && (
               <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                <label style={{ display: "block", fontSize: "13px", fontWeight: "500", color: "#374151", marginBottom: "6px" }}>
                   Nom
                 </label>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <div style={{ position: "relative" }}>
+                  <User style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", width: "16px", height: "16px", color: "#9ca3af" }} />
                   <input
                     type="text"
                     value={displayName}
                     onChange={(e) => setDisplayName(e.target.value)}
                     placeholder="Votre nom"
-                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-slate-900 dark:text-white placeholder-slate-400 focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition"
+                    style={{ width: "100%", paddingLeft: "40px", paddingRight: "16px", paddingTop: "10px", paddingBottom: "10px", background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: "8px", fontSize: "14px", color: "#0f172a", outline: "none" }}
+                    onFocus={(e) => e.target.style.borderColor = "#0d9488"}
+                    onBlur={(e) => e.target.style.borderColor = "#e2e8f0"}
                   />
                 </div>
               </div>
             )}
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+              <label style={{ display: "block", fontSize: "13px", fontWeight: "500", color: "#374151", marginBottom: "6px" }}>
                 Email
               </label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <div style={{ position: "relative" }}>
+                <Mail style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", width: "16px", height: "16px", color: "#9ca3af" }} />
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="votre@email.com"
                   required
-                  className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-slate-900 dark:text-white placeholder-slate-400 focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition"
+                  style={{ width: "100%", paddingLeft: "40px", paddingRight: "16px", paddingTop: "10px", paddingBottom: "10px", background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: "8px", fontSize: "14px", color: "#0f172a", outline: "none" }}
+                  onFocus={(e) => e.target.style.borderColor = "#0d9488"}
+                  onBlur={(e) => e.target.style.borderColor = "#e2e8f0"}
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+              <label style={{ display: "block", fontSize: "13px", fontWeight: "500", color: "#374151", marginBottom: "6px" }}>
                 Mot de passe
               </label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <div style={{ position: "relative" }}>
+                <Lock style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", width: "16px", height: "16px", color: "#9ca3af" }} />
                 <input
                   type={showPassword ? "text" : "password"}
                   value={password}
@@ -117,14 +112,16 @@ export default function LoginPage() {
                   placeholder="••••••••"
                   required
                   minLength={6}
-                  className="w-full pl-10 pr-10 py-2.5 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-slate-900 dark:text-white placeholder-slate-400 focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition"
+                  style={{ width: "100%", paddingLeft: "40px", paddingRight: "40px", paddingTop: "10px", paddingBottom: "10px", background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: "8px", fontSize: "14px", color: "#0f172a", outline: "none" }}
+                  onFocus={(e) => e.target.style.borderColor = "#0d9488"}
+                  onBlur={(e) => e.target.style.borderColor = "#e2e8f0"}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+                  style={{ position: "absolute", right: "12px", top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "#9ca3af", padding: "0" }}
                 >
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  {showPassword ? <EyeOff style={{ width: "16px", height: "16px" }} /> : <Eye style={{ width: "16px", height: "16px" }} />}
                 </button>
               </div>
             </div>
@@ -132,43 +129,26 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-2.5 px-4 bg-teal-600 hover:bg-teal-700 disabled:bg-teal-400 text-white font-medium rounded-lg transition shadow-sm"
+              style={{ width: "100%", padding: "11px 16px", background: loading ? "#99f6e4" : "#0d9488", color: "#ffffff", fontWeight: "600", fontSize: "14px", borderRadius: "8px", border: "none", cursor: loading ? "not-allowed" : "pointer", transition: "background 0.2s", marginTop: "8px" }}
+              onMouseEnter={(e) => { if (!loading) e.target.style.background = "#0f766e"; }}
+              onMouseLeave={(e) => { if (!loading) e.target.style.background = "#0d9488"; }}
             >
               {loading ? "Chargement..." : mode === "login" ? "Se connecter" : "Creer le compte"}
             </button>
           </form>
 
-          <div className="my-6 flex items-center gap-3">
-            <div className="flex-1 h-px bg-slate-200 dark:bg-slate-600" />
-            <span className="text-xs text-slate-400 uppercase">ou</span>
-            <div className="flex-1 h-px bg-slate-200 dark:bg-slate-600" />
-          </div>
-
-          <button
-            onClick={handleGoogle}
-            className="w-full flex items-center justify-center gap-3 py-2.5 px-4 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-600 transition text-slate-700 dark:text-slate-200 font-medium"
-          >
-            <svg className="w-5 h-5" viewBox="0 0 24 24">
-              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
-              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
-            </svg>
-            Continuer avec Google
-          </button>
-
-          <p className="mt-6 text-center text-sm text-slate-500 dark:text-slate-400">
+          <p style={{ marginTop: "24px", textAlign: "center", fontSize: "13px", color: "#64748b" }}>
             {mode === "login" ? (
               <>
                 Pas encore de compte ?{" "}
-                <button onClick={() => { setMode("signup"); setError(""); }} className="text-teal-600 hover:text-teal-700 font-medium">
+                <button onClick={() => { setMode("signup"); setError(""); }} style={{ color: "#0d9488", fontWeight: "600", background: "none", border: "none", cursor: "pointer", fontSize: "13px" }}>
                   Creer un compte
                 </button>
               </>
             ) : (
               <>
                 Deja un compte ?{" "}
-                <button onClick={() => { setMode("login"); setError(""); }} className="text-teal-600 hover:text-teal-700 font-medium">
+                <button onClick={() => { setMode("login"); setError(""); }} style={{ color: "#0d9488", fontWeight: "600", background: "none", border: "none", cursor: "pointer", fontSize: "13px" }}>
                   Se connecter
                 </button>
               </>
