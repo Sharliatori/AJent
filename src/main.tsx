@@ -2,6 +2,7 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import App from "./App.jsx";
+import AdminAuthGate from "./components/AdminAuthGate.jsx";
 import { AuthProvider } from "./portal/AuthContext.jsx";
 import ProtectedRoute from "./portal/ProtectedRoute.jsx";
 import PortalLayout from "./portal/PortalLayout.jsx";
@@ -20,8 +21,9 @@ createRoot(document.getElementById("root")).render(
     <BrowserRouter>
       <AuthProvider>
         <Routes>
-          {/* Admin back-office (existing) */}
-          <Route path="/" element={<App />} />
+          {/* Admin back-office — protected, only nicolas.sinou@lutecia.ai */}
+          <Route path="/" element={<AdminAuthGate><App /></AdminAuthGate>} />
+          <Route path="/backoffice" element={<AdminAuthGate><App /></AdminAuthGate>} />
 
           {/* Client portal */}
           <Route path="/portal/login" element={<LoginPage />} />
