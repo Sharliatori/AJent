@@ -1,6 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import nodemailer from "npm:nodemailer@9";
+import { buildReportEmail } from "../_shared/reportEmail.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -8,125 +9,6 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
 };
 
-function shortHost(url: string): string {
-  try { return new URL(url).hostname; } catch { return url; }
-}
-
-function buildEmailHtml(clients: any[], results: Record<string, any>, dnsResults: Record<string, any>, perfResults: Record<string, any>, clientName?: string): string {
-  const now = new Date().toLocaleString("fr-FR");
-  const allOk = clients.every((c) => !results[c.id]?.issues?.length);
-  const okCount = clients.filter(c => !results[c.id]?.issues?.length && results[c.id]).length;
-  const alertCount = clients.filter(c => results[c.id]?.issues?.length > 0).length;
-
-  const sBadge = (ok: boolean, label: string) =>
-    `<span style="display:inline-block;padding:4px 14px;border-radius:4px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;background:${ok ? "#d1fae5" : "#fee2e2"};color:${ok ? "#065f46" : "#991b1b"}">${label}</span>`;
-  const wBadge = (label: string) =>
-    `<span style="display:inline-block;padding:4px 14px;border-radius:4px;font-size:12px;font-weight:700;text-transform:uppercase;background:#fef3c7;color:#92400e">${label}</span>`;
-  const iBadge = (label: string) =>
-    `<span style="display:inline-block;padding:4px 14px;border-radius:4px;font-size:12px;background:#f3f4f6;color:#6b7280">${label}</span>`;
-
-  const kvRow = (label: string, badge: string) =>
-    `<tr><td style="padding:6px 0;font-size:12px;color:#6b7280">${label}</td><td style="padding:6px 0;text-align:right">${badge}</td></tr>`;
-
-  const cards = clients.map((c) => {
-    const r = results[c.id];
-    const dns = dnsResults[c.id];
-    const perf = perfResults[c.id];
-
-    if (!r) return `
-      <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:16px;margin-bottom:12px;text-align:center">
-        <div style="margin-bottom:8px">${iBadge("Non vérifié")}</div>
-        <strong style="color:#111827;font-size:14px">${c.name}</strong>
-        <div style="color:#9ca3af;font-size:11px;margin-top:2px">${shortHost(c.url)}</div>
-      </div>`;
-
-    const hasIssues = r.issues?.length > 0;
-    const dnsEmailOk = dns ? [dns.dns_mx?.ok, dns.dns_spf?.ok, dns.dns_dmarc?.ok].filter(Boolean).length >= 2 : null;
-    const perfScore = perf?.desktop?.performance ?? perf?.desktop?.score ?? perf?.mobile?.performance ?? perf?.mobile?.score;
-    const secScore = r.http?.securityScore;
-
-    const statusBig = hasIssues ? (r.issues.length > 1 ? sBadge(false, "Erreur") : wBadge("Attention")) : sBadge(true, "OK");
-    const dnsCell = dnsEmailOk !== null ? sBadge(dnsEmailOk, dnsEmailOk ? "OK" : "Attention") : iBadge("N/A");
-    const perfCell = perfScore !== undefined ? (perfScore >= 80 ? sBadge(true, `${perfScore}/100`) : perfScore >= 50 ? wBadge(`${perfScore}/100`) : sBadge(false, `${perfScore}/100`)) : iBadge("N/A");
-    const secCell = secScore !== undefined ? (secScore >= 80 ? sBadge(true, `${secScore}/100`) : secScore >= 40 ? wBadge(`${secScore}/100`) : sBadge(false, `${secScore}/100`)) : iBadge("N/A");
-
-    const issuesList = hasIssues
-      ? `<div style="margin-top:10px;padding-top:10px;border-top:1px solid #e5e7eb"><ul style="margin:0;padding:0 0 0 16px">${r.issues.map((i: string) => `<li style="color:#dc2626;font-size:12px;margin:2px 0">${i}</li>`).join("")}</ul></div>`
-      : "";
-
-    return `
-      <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:16px;margin-bottom:12px">
-        <div style="text-align:center;margin-bottom:12px">${statusBig}</div>
-        <div style="text-align:center;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid #e5e7eb">
-          <strong style="color:#111827;font-size:14px">${c.name}</strong>
-          <div style="color:#9ca3af;font-size:11px;margin-top:2px">${shortHost(c.url)}</div>
-        </div>
-        <table style="width:100%;border-collapse:collapse">
-          ${kvRow("Email DNS", dnsCell)}
-          ${kvRow("Performance", perfCell)}
-          ${kvRow("Sécurité", secCell)}
-        </table>
-        ${issuesList}
-      </div>`;
-  }).join("");
-
-  return `<!DOCTYPE html>
-<html lang="fr">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Rapport Lutecia</title></head>
-<body style="margin:0;padding:0;background:#f9fafb;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif">
-  <div style="max-width:600px;margin:24px auto;padding:0 12px">
-    <div style="background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 1px 8px rgba(0,0,0,0.08)">
-
-      <div style="background:#0a0c0f;padding:24px 20px">
-        <table style="width:100%;border-collapse:collapse">
-          <tr>
-            <td style="vertical-align:middle;padding:0">
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0EA5E9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:8px"><path d="m10.852 19.772-.383.924"/><path d="m13.148 14.228.383-.923"/><path d="M13.148 19.772a3 3 0 1 0-2.296-5.544l-.383-.923"/><path d="m13.53 20.696-.382-.924a3 3 0 1 1-2.296-5.544"/><path d="m14.772 15.852.923-.383"/><path d="m14.772 18.148.923.383"/><path d="M4.2 15.1a7 7 0 1 1 9.93-9.858A7 7 0 0 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.2"/><path d="m9.228 15.852-.923-.383"/><path d="m9.228 18.148-.923.383"/></svg>
-              <span style="color:#fff;font-size:18px;font-weight:700;letter-spacing:0.02em;vertical-align:middle">Lutecia Monitoring</span>
-            </td>
-          </tr>
-        </table>
-        <p style="color:#9ca3af;font-size:12px;margin:10px 0 0">Rapport de surveillance${clientName ? ` — ${clientName}` : ""} · ${now}</p>
-      </div>
-
-      <div style="padding:20px 20px 0">
-        <table style="width:100%;border-collapse:collapse;margin-bottom:20px">
-          <tr>
-            <td style="width:33%;padding:4px">
-              <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:12px;text-align:center">
-                <div style="font-size:10px;color:#9ca3af;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px">Total</div>
-                <div style="font-size:24px;font-weight:700;color:#111827">${clients.length}</div>
-              </div>
-            </td>
-            <td style="width:33%;padding:4px">
-              <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:12px;text-align:center">
-                <div style="font-size:10px;color:#9ca3af;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px">OK</div>
-                <div style="font-size:24px;font-weight:700;color:#16a34a">${okCount}</div>
-              </div>
-            </td>
-            <td style="width:33%;padding:4px">
-              <div style="background:${allOk ? "#f9fafb" : "#fef2f2"};border:1px solid ${allOk ? "#e5e7eb" : "#fecaca"};border-radius:8px;padding:12px;text-align:center">
-                <div style="font-size:10px;color:#9ca3af;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px">Alertes</div>
-                <div style="font-size:24px;font-weight:700;color:${allOk ? "#6b7280" : "#dc2626"}">${alertCount}</div>
-              </div>
-            </td>
-          </tr>
-        </table>
-      </div>
-
-      <div style="padding:0 20px 24px">
-        <h2 style="font-size:13px;font-weight:600;color:#111827;margin:0 0 12px">Détail des sites</h2>
-        ${cards}
-      </div>
-
-      <div style="background:#f9fafb;border-top:1px solid #e5e7eb;padding:16px 20px;text-align:center">
-        <p style="margin:0;font-size:11px;color:#9ca3af">Lutecia Monitoring · Rapport automatique</p>
-      </div>
-    </div>
-  </div>
-</body>
-</html>`;
-}
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
@@ -228,7 +110,11 @@ Deno.serve(async (req: Request) => {
     }
 
     const clientName = targetClientId ? clients[0]?.name : undefined;
-    const htmlBody = buildEmailHtml(clients, results, dnsResults, perfResults, clientName);
+    const htmlBody = buildReportEmail(
+      clients.map((c: any) => ({ client: c, mon: results[c.id], dns: dnsResults[c.id], perf: perfResults[c.id] })),
+      clientName ? `Rapport de santé — ${clientName}` : "Rapport de santé de vos sites",
+      "Lutecia Monitoring · Surveillance continue de vos sites"
+    );
     const subject = targetClientId
       ? `Rapport Lutecia — ${clientName} · ${new Date().toLocaleDateString("fr-FR")}`
       : `Rapport Lutecia — Tous les sites · ${new Date().toLocaleDateString("fr-FR")}`;

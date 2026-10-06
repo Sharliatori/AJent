@@ -1,6 +1,6 @@
 # Email Reports Module — Lutecia Monitoring Dashboard
 
-**Version:** 2026-07-1  
+**Version:** 2026-10-0  
 **Module:** `email-reports`
 
 ---
@@ -185,3 +185,16 @@ Utilisateur va dans Rapport
     → envoie email HTML aux recipients du client + globaux
     → retourne { sent, recipients, errors }
 ```
+
+
+---
+
+## Changelog 2026-10-0 — Rapports clients rassurants et lisibles sur mobile
+
+- **Modele commun** `supabase/functions/_shared/reportEmail.ts` (`buildReportEmail`) utilise par `send-report` et `weekly-report`.
+- **Contenu** : uniquement l'etat actuel (disponibilite, HTTPS, configuration email), le score Google PageSpeed mobile + ordinateur, et jusqu'a 5 recommandations.
+- **Supprime** : liste rouge des problemes, compteur "Alertes", badges "Erreur".
+- **Recommandations** : opportunites Lighthouse (stockees par `perf-check` dans `mobile_details.opportunities` / `desktop_details.opportunities`, en francais via `locale=fr`), + SSL < 30 jours, SPF/DMARC manquants.
+- **Mobile** : mise en page en tableaux une colonne, texte 15px, largeur fluide (max 600px), echappement HTML des donnees.
+- **daily-check** : l'email d'ecarts du soir (interne) ne mentionne plus "site revenu en ligne" ni "alertes resolues".
+- `send-alert` (alertes temps reel) inchange.

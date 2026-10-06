@@ -18,6 +18,7 @@ interface PerfScore {
   tbt: string;
   cls: string;
   si: string;
+  opportunities: { title: string; savings: string }[];
 }
 
 interface PerfCheckRequest {
@@ -44,6 +45,7 @@ async function checkPerformance(
         url,
         strategy,
         category: "performance",
+        locale: "fr",
       });
 
       const apiKey = Deno.env.get("PAGESPEED_API_KEY");
@@ -81,6 +83,11 @@ async function checkPerformance(
         tbt: audits["total-blocking-time"]?.displayValue ?? "-",
         cls: audits["cumulative-layout-shift"]?.displayValue ?? "-",
         si: audits["speed-index"]?.displayValue ?? "-",
+        opportunities: Object.values(audits as Record<string, any>)
+          .filter((a) => a?.details?.type === "opportunity" && typeof a.score === "number" && a.score < 0.9)
+          .sort((a, b) => (b.details?.overallSavingsMs ?? 0) - (a.details?.overallSavingsMs ?? 0))
+          .slice(0, 4)
+          .map((a) => ({ title: String(a.title ?? ""), savings: String(a.displayValue ?? "") })),
       };
 
       const status =

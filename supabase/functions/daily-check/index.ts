@@ -177,9 +177,7 @@ Deno.serve(async (req: Request) => {
 
         if (morning.http_ok && !evening.http_ok) {
           changes.push(`Site devenu inaccessible (HTTP ${evening.http_status_code ?? "N/A"})`);
-        } else if (!morning.http_ok && evening.http_ok) {
-          changes.push(`Site revenu en ligne (HTTP ${evening.http_status_code})`);
-        } else if (morning.http_status_code !== evening.http_status_code && evening.http_status_code) {
+        } else if (evening.http_ok && morning.http_ok && morning.http_status_code !== evening.http_status_code && evening.http_status_code) {
           changes.push(`Code HTTP modifié: ${morning.http_status_code} → ${evening.http_status_code}`);
         }
 
@@ -196,12 +194,6 @@ Deno.serve(async (req: Request) => {
         const newIssues = (evening.issues ?? []).filter((i: string) => !morningIssueSet.has(i) && !isTtfbIssue(i));
         if (newIssues.length > 0) {
           changes.push(`Nouvelle${newIssues.length > 1 ? "s" : ""} alerte${newIssues.length > 1 ? "s" : ""}: ${newIssues.join(" | ")}`);
-        }
-
-        const eveningIssueSet = new Set(evening.issues ?? []);
-        const resolved = (morning.issues ?? []).filter((i: string) => !eveningIssueSet.has(i) && !isTtfbIssue(i));
-        if (resolved.length > 0) {
-          changes.push(`Alerte${resolved.length > 1 ? "s" : ""} résolue${resolved.length > 1 ? "s" : ""}: ${resolved.join(" | ")}`);
         }
 
         if (changes.length > 0) {

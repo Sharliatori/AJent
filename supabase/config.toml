@@ -1,0 +1,53 @@
+[functions.check-site]
+verify_jwt = false
+
+[functions.create-portal-user]
+verify_jwt = false
+
+[functions.daily-check]
+verify_jwt = false
+
+[functions.delete-project]
+verify_jwt = true
+
+[functions.dns-monitor]
+verify_jwt = true
+
+[functions.get-reports]
+verify_jwt = true
+
+[functions.keep-alive]
+verify_jwt = false
+
+[functions.manage-recipients]
+verify_jwt = true
+
+[functions.perf-check]
+verify_jwt = false
+
+[functions.receive-analysis]
+verify_jwt = true
+
+[functions.register-project]
+verify_jwt = false
+
+[functions.save-bo-schedule]
+verify_jwt = false
+
+[functions.self-analyze]
+verify_jwt = false
+
+[functions.send-alert]
+verify_jwt = true
+
+[functions.send-report]
+verify_jwt = false
+
+[functions.test-smtp]
+verify_jwt = true
+
+[functions.trigger-analysis]
+verify_jwt = false
+
+[functions.weekly-report]
+verify_jwt = false
