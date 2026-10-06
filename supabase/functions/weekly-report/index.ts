@@ -93,7 +93,7 @@ Deno.serve(async (req: Request) => {
     // ── Per-client personalized emails ────────────────────────────────────────
     for (const client of clients) {
       const clientRecipients = recipients.filter(
-        (r: any) => r.client_id === client.id && r.receive_reports
+        (r: any) => r.client_id === client.id && r.receive_reports && r.email !== smtpRow.alert_to
       );
       if (clientRecipients.length === 0) continue;
 
@@ -119,8 +119,27 @@ Deno.serve(async (req: Request) => {
       }
     }
 
-    // ── Global recipients: full summary of all clients ────────────────────────
-    const globalRecipients = recipients.filter((r: any) => r.client_id === null && r.receive_reports);
+    // ── Admin: full technical summary of all clients ──────────────────────────
+    if (smtpRow.alert_to) {
+      const html = buildReportEmail(
+        clients.map((c: any) => ({ client: c, mon: monMap[c.id], dns: dnsMap[c.id], perf: perfMap[c.id] })),
+        "Rapport hebdomadaire — Vue admin complète",
+        "Lutecia Monitoring · Version admin avec détails techniques",
+        true
+      );
+      try {
+        await transporter.sendMail({
+          from: `"Lutecia Monitoring" <${smtpRow.smtp_user}>`,
+          to: smtpRow.alert_to,
+          subject: `[Admin] Rapport hebdomadaire — Tous les sites · ${weekLabel}`,
+          html,
+        });
+        sent.push(`${smtpRow.alert_to} (admin)`);
+      } catch (err: any) {
+        errors.push(`${smtpRow.alert_to} — admin: ${err.message}`);
+      }
+    }
+    const globalRecipients = recipients.filter((r: any) => r.client_id === null && r.receive_reports && r.email !== smtpRow.alert_to);
     if (globalRecipients.length > 0) {
       const html = buildReportEmail(
         clients.map((c: any) => ({ client: c, mon: monMap[c.id], dns: dnsMap[c.id], perf: perfMap[c.id] })),

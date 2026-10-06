@@ -1,9 +1,9 @@
 // Client-facing report: current state, Google PageSpeed scores and recommendations only.
-// Deliberately omits incident history and raw alerts so clients are not alarmed.
+// Raw issues are only rendered when `technical` is true, which must be reserved for the admin address.
 
 export interface ReportSite {
   client: { name: string; url: string };
-  mon?: { http?: any; ssl?: any; checkedAt?: string } | null;
+  mon?: { http?: any; ssl?: any; issues?: string[]; checkedAt?: string } | null;
   dns?: any;
   perf?: { mobile?: any; desktop?: any } | null;
 }
@@ -82,7 +82,18 @@ function buildRecommendations(site: ReportSite): string[] {
   return recs.slice(0, 5);
 }
 
-function siteCard(site: ReportSite): string {
+function technicalBlock(site: ReportSite): string {
+  const issues = site.mon?.issues ?? [];
+  const items = issues.length
+    ? issues.map((i) => `<li style="margin:4px 0">${esc(i)}</li>`).join("")
+    : `<li style="margin:4px 0;color:#065f46">Aucun problème détecté</li>`;
+  return `<div style="margin-top:20px;padding:12px 14px;background:#fef2f2;border:1px dashed #fca5a5;border-radius:10px">
+    <div style="font-size:13px;line-height:20px;font-weight:700;color:#991b1b;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px">Détails techniques (admin uniquement)</div>
+    <ul style="margin:0;padding:0 0 0 18px;font-size:14px;line-height:21px;color:#7f1d1d">${items}</ul>
+  </div>`;
+}
+
+function siteCard(site: ReportSite, technical: boolean): string {
   const { client, mon, dns, perf } = site;
   const httpOk = mon?.http ? (mon.http.ok ?? mon.http.success ?? null) : null;
   const sslOk = mon?.ssl ? (mon.ssl.ok ?? mon.ssl.success ?? null) : null;
@@ -123,12 +134,13 @@ function siteCard(site: ReportSite): string {
       <tr>${scoreCell("Mobile", perf?.mobile)}${scoreCell("Ordinateur", perf?.desktop)}</tr>
     </table>
     ${recsHtml}
+    ${technical ? technicalBlock(site) : ""}
   </div>`;
 }
 
-export function buildReportEmail(sites: ReportSite[], subtitle: string, footer: string): string {
+export function buildReportEmail(sites: ReportSite[], subtitle: string, footer: string, technical = false): string {
   const now = new Date().toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
-  const cards = sites.map(siteCard).join("");
+  const cards = sites.map((s) => siteCard(s, technical)).join("");
 
   return `<!DOCTYPE html>
 <html lang="fr">

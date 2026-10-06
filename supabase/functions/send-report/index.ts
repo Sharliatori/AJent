@@ -110,11 +110,11 @@ Deno.serve(async (req: Request) => {
     }
 
     const clientName = targetClientId ? clients[0]?.name : undefined;
-    const htmlBody = buildReportEmail(
-      clients.map((c: any) => ({ client: c, mon: results[c.id], dns: dnsResults[c.id], perf: perfResults[c.id] })),
-      clientName ? `Rapport de santé — ${clientName}` : "Rapport de santé de vos sites",
-      "Lutecia Monitoring · Surveillance continue de vos sites"
-    );
+    const sites = clients.map((c: any) => ({ client: c, mon: results[c.id], dns: dnsResults[c.id], perf: perfResults[c.id] }));
+    const subtitle = clientName ? `Rapport de santé — ${clientName}` : "Rapport de santé de vos sites";
+    const footer = "Lutecia Monitoring · Surveillance continue de vos sites";
+    const clientHtml = buildReportEmail(sites, subtitle, footer);
+    const adminHtml = buildReportEmail(sites, subtitle, footer, true);
     const subject = targetClientId
       ? `Rapport Lutecia — ${clientName} · ${new Date().toLocaleDateString("fr-FR")}`
       : `Rapport Lutecia — Tous les sites · ${new Date().toLocaleDateString("fr-FR")}`;
@@ -128,7 +128,7 @@ Deno.serve(async (req: Request) => {
           from: `"Lutecia Monitoring" <${smtpRow.smtp_user}>`,
           to,
           subject,
-          html: htmlBody,
+          html: to === smtpRow.alert_to ? adminHtml : clientHtml,
         });
         sent.push(to);
       } catch (err: any) {

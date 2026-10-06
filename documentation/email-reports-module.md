@@ -1,6 +1,6 @@
 # Email Reports Module — Lutecia Monitoring Dashboard
 
-**Version:** 2026-10-0  
+**Version:** 2026-10-1  
 **Module:** `email-reports`
 
 ---
@@ -196,5 +196,13 @@ Utilisateur va dans Rapport
 - **Supprime** : liste rouge des problemes, compteur "Alertes", badges "Erreur".
 - **Recommandations** : opportunites Lighthouse (stockees par `perf-check` dans `mobile_details.opportunities` / `desktop_details.opportunities`, en francais via `locale=fr`), + SSL < 30 jours, SPF/DMARC manquants.
 - **Mobile** : mise en page en tableaux une colonne, texte 15px, largeur fluide (max 600px), echappement HTML des donnees.
-- **daily-check** : l'email d'ecarts du soir (interne) ne mentionne plus "site revenu en ligne" ni "alertes resolues".
-- `send-alert` (alertes temps reel) inchange.
+
+## Changelog 2026-10-1 — Separation admin / clients
+
+Adresse admin = `smtp_config.alert_to`.
+
+- **send-alert** : alertes temps reel envoyees UNIQUEMENT a l'admin (plus jamais aux `report_recipients`).
+- **daily-check** : email d'ecarts matin/soir envoye a l'admin, contenu complet (y compris "site revenu en ligne" et "alertes resolues").
+- **send-report** : les clients recoivent la version rassurante ; l'admin recoit la meme avec un bloc "Details techniques (admin uniquement)" listant les problemes bruts.
+- **weekly-report** : clients = version rassurante ; l'admin recoit en plus un rapport "[Admin]" de tous les sites avec details techniques. L'adresse admin est exclue des envois clients.
+- `buildReportEmail(sites, subtitle, footer, technical = false)` : le parametre `technical` ne doit etre active que pour l'admin.

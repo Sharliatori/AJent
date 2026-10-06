@@ -61,15 +61,8 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // Fetch recipients for this client (specific + global)
-    const { data: recipients } = await supabase
-      .from("report_recipients")
-      .select("email")
-      .eq("receive_alerts", true)
-      .or(`client_id.eq.${client_id},client_id.is.null`);
-
+    // Real-time alerts are admin-only: never sent to client recipients.
     const emailSet = new Set<string>();
-    (recipients ?? []).forEach((r: any) => emailSet.add(r.email));
     if (smtpRow.alert_to) emailSet.add(smtpRow.alert_to);
 
     if (emailSet.size === 0) {
